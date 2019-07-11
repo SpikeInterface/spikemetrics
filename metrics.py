@@ -10,8 +10,8 @@ from scipy.spatial.distance import cdist
 from scipy.stats import chi2
 from scipy.ndimage.filters import gaussian_filter1d
 
-from ...common.epoch import Epoch
-from ...common.utils import printProgressBar, get_spike_depths
+from common.epoch import Epoch
+from common.utils import printProgressBar, get_spike_depths
 
 
 def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, pc_features, pc_feature_ind, params, epochs = None):
