@@ -1,7 +1,7 @@
 # SpikeMetrics
 Computes quality metrics for sorted units. This module can calculate metrics separately for individual epochs. If no epochs are specified, metrics are computed for the entire recording.
 
-The base code was ported from: https://github.com/AllenInstitute/ecephys_spike_sorting/tree/master/ecephys_spike_sorting/modules/quality_metrics
+The base code (and README images/description) was ported from: https://github.com/AllenInstitute/ecephys_spike_sorting/tree/master/ecephys_spike_sorting/modules/quality_metrics
 
 ## Included Metrics
 
