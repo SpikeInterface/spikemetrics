@@ -13,7 +13,7 @@ The base code (and README images/description) was ported from: https://github.co
 | Amplitude cutoff   |![](images/amp_cut.png)   | Estimate of miss rate based on amplitude histogram |                  |
 | Isolation distance |![](images/isol_dist.png) | The Mahalanobis distance from a specified unit within as many spikes belong to the specified unit as to other units   | Harris et al. Neuron 32.1 (2001): 141-149. |
 | L-ratio            |                          | The Mahalanobis distance and χ2 inverse cdf (given the assumption that the spikes in the cluster distribute normally in each dimension) are used to find the probability of cluster membership for each spike. |        Schmitzer-Torbert and Redish. _J Neurophy_  91.5 (2004): 2259-2272.         |
-| _d'_               |![](images/d_prime.png)   | Classification accuracy based on LDA               | Hill et al. (2011) _J Neurosci_ **31**, 8699-9705 |
+| _d'_               |![](images/d_prime.png)   | The classification accuracy between units based on linear discriminant analysis (LDA)               | Hill et al. (2011) _J Neurosci_ **31**, 8699-9705 |
 | Nearest-neighbors  |![](images/nn_overlap.png)| Non-parametric estimate of unit contamination      | Chung et al. (2017) _Neuron_ **95**, 1381-1394 |
 | Silhouette score  |                           | Standard metric for cluster overlap      |         |
 | Maximum drift     |                           | Maximum change in spike depth throughout recording    |         |
