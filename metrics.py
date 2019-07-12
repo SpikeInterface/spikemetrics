@@ -36,6 +36,13 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, pc_f
         contains information on Epoch start and stop times
     params : dict of parameters
         'isi_threshold' : minimum time for isi violations
+        'min_isi'
+        'num_channels_to_compare'
+        'max_spikes_for_unit'
+        'max_spikes_for_nn'
+        'n_neighbors'
+        'drift_metrics_interval_s'
+        'drift_metrics_min_spikes_per_interval'
 
     
     Outputs:
