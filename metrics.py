@@ -1,8 +1,5 @@
-'''
-Copyright © 2019. Allen Institute.  All rights reserved.
-This file is adapted from https://github.com/AllenInstitute/ecephys_spike_sorting and 
-the license (Allen Institute Software License) permits its reuse.
-'''
+# Copyright © 2019. Allen Institute
+
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
