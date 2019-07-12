@@ -11,7 +11,7 @@ The base code (and README images/description) was ported from: https://github.co
 | Presence ratio     |                          | Fraction of epoch in which spikes are present      |                  |
 | ISI violations     |![](images/isi_viol.png)  | Rate of refractory-period violations               |                  |
 | Amplitude cutoff   |![](images/amp_cut.png)   | Estimate of miss rate based on amplitude histogram |                  |
-| Isolation distance |![](images/isol_dist.png) | Distance to nearest cluster in Mahalanobis space   | Schmitzer-Torbert et al. (2005) _Neuroscience_ **131**, 1-11 |
+| Isolation distance |![](images/isol_dist.png) | The Mahalanobis distance from a specified unit within as many spikes belong to the specified unit as to other units   | Harris et al. Neuron 32.1 (2001): 141-149. |
 | L-ratio            |                          |                                                    |         "         |
 | _d'_               |![](images/d_prime.png)   | Classification accuracy based on LDA               | Hill et al. (2011) _J Neurosci_ **31**, 8699-9705 |
 | Nearest-neighbors  |![](images/nn_overlap.png)| Non-parametric estimate of unit contamination      | Chung et al. (2017) _Neuron_ **95**, 1381-1394 |
