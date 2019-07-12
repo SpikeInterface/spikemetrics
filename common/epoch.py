@@ -1,3 +1,5 @@
+# Copyright © 2019. Allen Institute.  All rights reserved.
+
 import h5py as h5
 import numpy as np
 
