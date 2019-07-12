@@ -1,21 +1,23 @@
 # SpikeMetrics
 Computes quality metrics for sorted units. This module can calculate metrics separately for individual epochs. If no epochs are specified, metrics are computed for the entire recording.
 
-The base code (and README images/description) was ported from: https://github.com/AllenInstitute/ecephys_spike_sorting/tree/master/ecephys_spike_sorting/modules/quality_metrics
+The base code (and portions of the README images/description) was ported from: https://github.com/AllenInstitute/ecephys_spike_sorting/tree/master/ecephys_spike_sorting/modules/quality_metrics
 
 ## Included Metrics
 
 | Metric             | Icon                     | Description                                        |    Reference     |
 | ------------------ |:------------------------:| -------------------------------------------------- | -----------------|
+| Spike count        |                          | The total spike count for a sorted unit over the length of the recording.                        |                  |
+| Firing rate        |                          | Mean spike rate in an epoch                        |                  |
 | Firing rate        |                          | Mean spike rate in an epoch                        |                  |
 | Presence ratio     |                          | Fraction of epoch in which spikes are present      |                  |
 | ISI violations     |![](images/isi_viol.png)  | Rate of refractory-period violations               |                  |
 | Amplitude cutoff   |![](images/amp_cut.png)   | Estimate of miss rate based on amplitude histogram |                  |
 | Isolation distance |![](images/isol_dist.png) | The Mahalanobis distance from a specified unit within as many spikes belong to the specified unit as to other units   | Harris et al. Neuron 32.1 (2001): 141-149. |
 | L-ratio            |                          | The Mahalanobis distance and χ2 inverse cdf (given the assumption that the spikes in the cluster distribute normally in each dimension) are used to find the probability of cluster membership for each spike. |        Schmitzer-Torbert and Redish. _J Neurophy_  91.5 (2004): 2259-2272.         |
-| _d'_               |![](images/d_prime.png)   | The classification accuracy between units based on linear discriminant analysis (LDA)               | Hill et al. (2011) _J Neurosci_ **31**, 8699-9705 |
-| Nearest-neighbors  |![](images/nn_overlap.png)| Non-parametric estimate of unit contamination      | Chung et al. (2017) _Neuron_ **95**, 1381-1394 |
-| Silhouette score  |                           | Standard metric for cluster overlap      |         |
+| _d'_               |![](images/d_prime.png)   | The classification accuracy between units based on linear discriminant analysis (LDA).               | Hill et al. (2011) _J Neurosci_ **31**, 8699-9705 |
+| Nearest-neighbors  |![](images/nn_overlap.png)| Non-parametric estimate of unit contamination using nearest-neighbor classification.      | Chung et al. (2017) _Neuron_ **95**, 1381-1394 |
+| Silhouette score  |                           | A standard metric for quantifying cluster overlap      |         |
 | Maximum drift     |                           | Maximum change in spike depth throughout recording    |         |
 | Cumulative drift  |                           | Cumulative change in spike depth throughout recording |         |
 
