@@ -7,8 +7,6 @@ The base code (and portions of the README images/description) was ported from: h
 
 | Metric             | Icon                     | Description                                        |    Reference     |
 | ------------------ |:------------------------:| -------------------------------------------------- | -----------------|
-| Spike count        |                          | The total spike count for a sorted unit over the length of the recording.                        |                  |
-| Firing rate        |                          | Mean spike rate in an epoch                        |                  |
 | Firing rate        |                          | Mean spike rate in an epoch                        |                  |
 | Presence ratio     |                          | Fraction of epoch in which spikes are present      |                  |
 | ISI violations     |![](images/isi_viol.png)  | Rate of refractory-period violations               |                  |
