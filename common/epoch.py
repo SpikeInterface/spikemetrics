@@ -47,6 +47,12 @@ class Epoch():
             self.end_index = np.argmin(np.abs(timestamps - self.end_time))
         else:
             self.end_index = timestamps.size
+            
+    def __str__(self):
+        return str(self.name) + ": " + str((self.start_time, self.end_time))
+    
+    def __repr__(self):
+        return str(self)
 
 
 

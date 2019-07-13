@@ -12,11 +12,12 @@ from scipy.spatial.distance import cdist
 from scipy.stats import chi2
 from scipy.ndimage.filters import gaussian_filter1d
 
-from common.epoch import Epoch
-from common.utils import printProgressBar, get_spike_depths
+from .common import Epoch
+from .common import printProgressBar, get_spike_depths
 
 
-def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, pc_features, pc_feature_ind, params, epochs = None):
+def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, \
+                      pc_features, pc_feature_ind, params, epochs = None):
 
     """ Calculate metrics for all units on one probe
 
@@ -59,14 +60,20 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, pc_f
 
     if epochs is None:
         epochs = [Epoch('complete_session', 0, np.inf)]
+        
+    spike_times = spike_times.flatten('F')
+    spike_clusters = spike_clusters.flatten('F')
+    amplitudes = amplitudes.flatten('F')
 
     total_units = np.max(spike_clusters) + 1
     total_epochs = len(epochs)
 
     for epoch in epochs:
-
-        in_epoch = (spike_times > epoch.start_time) * (spike_times < epoch.end_time)
-
+        in_epoch = np.logical_and(spike_times > epoch.start_time, spike_times < epoch.end_time)
+        spikes_in_epoch = np.sum(in_epoch)
+        spikes_for_nn = min(spikes_in_epoch, params['max_spikes_for_nn'])
+        spikes_for_silhouette = min(spikes_in_epoch, params['n_silhouette'])
+        
         print("Calculating isi violations")
         isi_viol = calculate_isi_violations(spike_times[in_epoch], spike_clusters[in_epoch], total_units, params['isi_threshold'], params['min_isi'])
         
@@ -87,7 +94,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, pc_f
                                                                                                pc_feature_ind,
                                                                                                params['num_channels_to_compare'],
                                                                                                params['max_spikes_for_unit'],
-                                                                                               params['max_spikes_for_nn'],
+                                                                                               spikes_for_nn,
                                                                                                params['n_neighbors'])
   
         print("Calculating silhouette score")
@@ -95,7 +102,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, pc_f
                                                        total_units,
                                                        pc_features[in_epoch,:,:],
                                                        pc_feature_ind,
-                                                       params['n_silhouette'])
+                                                       spikes_for_silhouette)
 
 
         print("Calculating drift metrics")
@@ -108,7 +115,6 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, pc_f
                                                        params['drift_metrics_min_spikes_per_interval'])
 
         cluster_ids = np.arange(total_units)
-
         epoch_name = [epoch.name] * len(cluster_ids)
 
         metrics = pd.concat((metrics, pd.DataFrame(data= OrderedDict((('cluster_id', cluster_ids),
@@ -568,8 +574,7 @@ def mahalanobis_metrics(all_pcs, all_labels, this_unit_id):
     l_ratio : float
         L-ratio for this unit
 
-    """
-    
+    """    
     pcs_for_this_unit = all_pcs[all_labels == this_unit_id,:]
     pcs_for_other_units = all_pcs[all_labels != this_unit_id, :]
     
