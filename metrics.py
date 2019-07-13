@@ -81,7 +81,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, \
         presence_ratio = calculate_presence_ratio(spike_times[in_epoch], spike_clusters[in_epoch], total_units)
 
         print("Calculating firing rate")
-        firing_rate = calculate_firing_rate(spike_times[in_epoch], spike_clusters[in_epoch], total_units)
+        firing_rate, num_spikes = calculate_firing_rate(spike_times[in_epoch], spike_clusters[in_epoch], total_units)
         
         print("Calculating amplitude cutoff")
         amplitude_cutoff = calculate_amplitude_cutoff(spike_clusters[in_epoch], amplitudes[in_epoch], total_units)
@@ -118,6 +118,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, \
         epoch_name = [epoch.name] * len(cluster_ids)
 
         metrics = pd.concat((metrics, pd.DataFrame(data= OrderedDict((('cluster_id', cluster_ids),
+                                ('num_spikes' , num_spikes),
                                 ('firing_rate' , firing_rate),
                                 ('presence_ratio' , presence_ratio),
                                 ('isi_viol' , isi_viol),
@@ -184,6 +185,7 @@ def calculate_firing_rate(spike_times, spike_clusters, total_units):
     cluster_ids = np.unique(spike_clusters)
 
     firing_rates = np.zeros((total_units,))
+    num_spikes = np.zeros((total_units,))
 
     min_time = np.min(spike_times)
     max_time = np.max(spike_times)
@@ -196,8 +198,8 @@ def calculate_firing_rate(spike_times, spike_clusters, total_units):
         firing_rates[cluster_id] = firing_rate(spike_times[for_this_cluster], 
                                         min_time = np.min(spike_times),
                                         max_time = np.max(spike_times))
-
-    return firing_rates
+        num_spikes[cluster_id] = len(spike_times[for_this_cluster])
+    return firing_rates, num_spikes
 
 
 def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units):
@@ -224,7 +226,7 @@ def calculate_pc_metrics(spike_clusters,
                          pc_feature_ind, 
                          num_channels_to_compare, 
                          max_spikes_for_cluster, 
-                         max_spikes_for_nn, 
+                         spikes_for_nn, 
                          n_neighbors):
 
 
@@ -313,7 +315,7 @@ def calculate_pc_metrics(spike_clusters,
 
             d_primes[cluster_id] = lda_metrics(all_pcs, all_labels, cluster_id)
 
-            nn_hit_rates[cluster_id], nn_miss_rates[cluster_id] = nearest_neighbors_metrics(all_pcs, all_labels, cluster_id, max_spikes_for_nn, n_neighbors)
+            nn_hit_rates[cluster_id], nn_miss_rates[cluster_id] = nearest_neighbors_metrics(all_pcs, all_labels, cluster_id, spikes_for_nn, n_neighbors)
 
         else:
 
@@ -330,13 +332,13 @@ def calculate_silhouette_score(spike_clusters,
                                  total_units,
                                  pc_features, 
                                  pc_feature_ind,
-                                 total_spikes):
+                                 spikes_for_silhouette):
 
     random_spike_inds = np.random.permutation(spike_clusters.size)
-    random_spike_inds = random_spike_inds[:total_spikes]
+    random_spike_inds = random_spike_inds[:spikes_for_silhouette]
     num_pc_features = pc_features.shape[1]
 
-    all_pcs = np.zeros((total_spikes, np.max(pc_feature_ind) * num_pc_features + 1))
+    all_pcs = np.zeros((spikes_for_silhouette, np.max(pc_feature_ind) * num_pc_features + 1))
 
     for idx, i in enumerate(random_spike_inds):
         
@@ -653,7 +655,7 @@ def lda_metrics(all_pcs, all_labels, this_unit_id):
 
 
 
-def nearest_neighbors_metrics(all_pcs, all_labels, this_unit_id, max_spikes_for_nn, n_neighbors):
+def nearest_neighbors_metrics(all_pcs, all_labels, this_unit_id, spikes_for_nn, n_neighbors):
 
     """ Calculates unit contamination based on NearestNeighbors search in PCA space
 
@@ -667,7 +669,7 @@ def nearest_neighbors_metrics(all_pcs, all_labels, this_unit_id, max_spikes_for_
         1D array of cluster labels for all spikes
     this_unit_id : Int
         number corresponding to unit for which these metrics will be calculated
-    max_spikes_for_nn : Int
+    spikes_for_nn : Int
         number of spikes to use (calculation can be very slow when this number is >20000)
     n_neighbors : Int
         number of neighbors to use
@@ -682,7 +684,7 @@ def nearest_neighbors_metrics(all_pcs, all_labels, this_unit_id, max_spikes_for_
     """
 
     total_spikes = all_pcs.shape[0]
-    ratio = max_spikes_for_nn / total_spikes
+    ratio = spikes_for_nn / total_spikes
     this_unit = all_labels == this_unit_id
     
     X = np.concatenate((all_pcs[this_unit,:], all_pcs[np.invert(this_unit),:]),0)
