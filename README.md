@@ -5,8 +5,6 @@ The base code (and portions of the README images/description) was ported from: h
 
 Copyright © 2019. Allen Institute.  All rights reserved.
 
-[//]: <> (| Amplitude cutoff   |![](images/amp_cut.png)   | Estimate of miss rate based on amplitude histogram |                  |)
-
 ## Included Metrics
 
 | Metric             | Icon                     | Description                                        |    Reference     |
