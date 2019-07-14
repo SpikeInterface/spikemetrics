@@ -9,6 +9,7 @@ Copyright © 2019. Allen Institute.  All rights reserved.
 
 | Metric             | Icon                     | Description                                        |    Reference     |
 | ------------------ |:------------------------:| -------------------------------------------------- | -----------------|
+| Spike Count       |                          | The spike count in an epoch                        |                  |
 | Firing rate        |                          | Mean spike rate in an epoch                        |                  |
 | Presence ratio     |                          | Fraction of epoch in which spikes are present      |                  |
 | ISI violations     |![](images/isi_viol.png)  | Rate of refractory-period violations               |                  |
