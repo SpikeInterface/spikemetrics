@@ -20,7 +20,7 @@ from .common import printProgressBar, get_spike_depths
 #                       pc_features, pc_feature_ind, params, epochs = None):
 
 def calculate_metrics(spike_times, spike_clusters, channel_map, pc_features, \
-                      pc_feature_ind, params, epochs = None):
+                      pc_feature_ind, params, cluster_ids=None, epochs = None):
 
     """ Calculate metrics for all units on one probe
 
@@ -62,8 +62,8 @@ def calculate_metrics(spike_times, spike_clusters, channel_map, pc_features, \
     if epochs is None:
         epochs = [Epoch('complete_session', 0, np.inf)]
 
-    spike_times = spike_times.flatten('F')
-    spike_clusters = spike_clusters.flatten('F')
+    # spike_times = spike_times.flatten('F')
+    # spike_clusters = spike_clusters.flatten('F')
     # amplitudes = amplitudes.flatten('F')
 
     total_units = np.max(spike_clusters) + 1
@@ -100,11 +100,10 @@ def calculate_metrics(spike_times, spike_clusters, channel_map, pc_features, \
 
         print("Calculating silhouette score")
         silhouette_score = calculate_silhouette_score(spike_clusters[in_epoch],
-                                                       total_units,
-                                                       pc_features[in_epoch,:,:],
-                                                       pc_feature_ind,
-                                                       spikes_for_silhouette)
-
+                                                      total_units,
+                                                      pc_features[in_epoch,:,:],
+                                                      pc_feature_ind,
+                                                      spikes_for_silhouette)
 
         print("Calculating drift metrics")
         max_drift, cumulative_drift = calculate_drift_metrics(spike_times[in_epoch],
@@ -114,11 +113,13 @@ def calculate_metrics(spike_times, spike_clusters, channel_map, pc_features, \
                                                               pc_feature_ind,
                                                               params['drift_metrics_interval_s'],
                                                               params['drift_metrics_min_spikes_per_interval'])
-
-        cluster_ids = np.arange(total_units)
+        if(cluster_ids is None):
+            cluster_ids_out = np.arange(total_units)
+        else:
+            cluster_ids_out = cluster_ids
         epoch_name = [epoch.name] * len(cluster_ids)
 
-        metrics = pd.concat((metrics, pd.DataFrame(data= OrderedDict((('cluster_id', cluster_ids),
+        metrics = pd.concat((metrics, pd.DataFrame(data= OrderedDict((('cluster_id', cluster_ids_out),
                                 ('num_spikes' , num_spikes),
                                 ('firing_rate' , firing_rate),
                                 ('presence_ratio' , presence_ratio),
@@ -200,6 +201,7 @@ def calculate_firing_rate(spike_times, spike_clusters, total_units):
                                         min_time = np.min(spike_times),
                                         max_time = np.max(spike_times))
         num_spikes[cluster_id] = len(spike_times[for_this_cluster])
+
     return firing_rates, num_spikes
 
 
@@ -228,8 +230,8 @@ def calculate_pc_metrics(spike_clusters,
                          num_channels_to_compare,
                          max_spikes_for_cluster,
                          spikes_for_nn,
-                         n_neighbors):
-
+                         n_neighbors,
+                         metric_names=['isolation_distance', 'l_ratio', 'd_prime', 'nearest_neighbor']):
 
     assert(num_channels_to_compare % 2 == 1)
     half_spread = int((num_channels_to_compare - 1) / 2)
@@ -312,12 +314,22 @@ def calculate_pc_metrics(spike_clusters,
 
         if all_pcs.shape[0] > 10:
 
-            isolation_distances[cluster_id], l_ratios[cluster_id] = mahalanobis_metrics(all_pcs, all_labels, cluster_id)
+            if 'isolation_distance' in metric_names or 'l_ratio' in metric_names:
+                isolation_distances[cluster_id], l_ratios[cluster_id] = mahalanobis_metrics(all_pcs, all_labels, cluster_id)
+            else:
+                isolation_distances[cluster_id] = np.nan 
+                l_ratios[cluster_id] = np.nan
+            
+            if 'd_prime' in metric_names:
+                d_primes[cluster_id] = lda_metrics(all_pcs, all_labels, cluster_id)
+            else:
+                d_primes[cluster_id] = np.nan
 
-            d_primes[cluster_id] = lda_metrics(all_pcs, all_labels, cluster_id)
-
-            nn_hit_rates[cluster_id], nn_miss_rates[cluster_id] = nearest_neighbors_metrics(all_pcs, all_labels, cluster_id, spikes_for_nn, n_neighbors)
-
+            if 'nearest_neighbor' in metric_names:
+                nn_hit_rates[cluster_id], nn_miss_rates[cluster_id] = nearest_neighbors_metrics(all_pcs, all_labels, cluster_id, spikes_for_nn, n_neighbors)
+            else:
+                nn_hit_rates[cluster_id] = np.nan
+                nn_miss_rates[cluster_id] = np.nan
         else:
 
             isolation_distances[cluster_id] = np.nan
@@ -330,10 +342,10 @@ def calculate_pc_metrics(spike_clusters,
 
 
 def calculate_silhouette_score(spike_clusters,
-                                 total_units,
-                                 pc_features,
-                                 pc_feature_ind,
-                                 spikes_for_silhouette):
+                               total_units,
+                               pc_features,
+                               pc_feature_ind,
+                               spikes_for_silhouette):
 
     random_spike_inds = np.random.permutation(spike_clusters.size)
     random_spike_inds = random_spike_inds[:spikes_for_silhouette]
@@ -578,6 +590,7 @@ def mahalanobis_metrics(all_pcs, all_labels, this_unit_id):
         L-ratio for this unit
 
     """
+
     pcs_for_this_unit = all_pcs[all_labels == this_unit_id,:]
     pcs_for_other_units = all_pcs[all_labels != this_unit_id, :]
 
@@ -599,15 +612,13 @@ def mahalanobis_metrics(all_pcs, all_labels, this_unit_id):
     n = np.min([pcs_for_this_unit.shape[0], pcs_for_other_units.shape[0]]) # number of spikes
 
     if n >= 2:
-
         dof = pcs_for_this_unit.shape[1] # number of features
-
         l_ratio = np.sum(1 - chi2.cdf(pow(mahalanobis_other,2), dof)) / mahalanobis_other.shape[0]
         isolation_distance = pow(mahalanobis_other[n-1],2)
-
     else:
         l_ratio = np.nan
         isolation_distance = np.nan
+
 
     return isolation_distance, l_ratio
 
