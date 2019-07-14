@@ -8,11 +8,8 @@ import glob
 import sys
 import time
 
-from git import Repo
-
-
 def find_range(x,a,b,option='within'):
-    
+
     """
     Find indices of data within or outside range [a,b]
 
@@ -54,7 +51,7 @@ def rms(data):
     Output:
     ------
     rms_value - float
-    
+
     """
 
     return np.power(np.mean(np.power(data.astype('float32'),2)),0.5)
@@ -92,21 +89,21 @@ def write_probe_json(output_file, channels, offset, scaling, mask, surface_chann
     """
 
     with open(output_file, 'w') as outfile:
-        json.dump( 
-                  {  
-                        'channel' : channels.tolist(), 
-                        'offset' : offset.tolist(), 
-                        'scaling' : scaling.tolist(), 
-                        'mask' : mask.tolist(), 
-                        'surface_channel' : surface_channel, 
+        json.dump(
+                  {
+                        'channel' : channels.tolist(),
+                        'offset' : offset.tolist(),
+                        'scaling' : scaling.tolist(),
+                        'mask' : mask.tolist(),
+                        'surface_channel' : surface_channel,
                         'air_channel' : air_channel,
                         'vertical_pos' : vertical_pos.tolist(),
                         'horizontal_pos' : horizontal_pos.tolist()
                    },
-                 
-                  outfile, 
-                  indent = 4, separators = (',', ': ') 
-                 ) 
+
+                  outfile,
+                  indent = 4, separators = (',', ': ')
+                 )
 
 def read_probe_json(input_file):
 
@@ -132,10 +129,10 @@ def read_probe_json(input_file):
         Index of channel at interface between saline/agar and air
 
     """
-    
+
     with open(input_file) as data_file:
         data = json.load(data_file)
-    
+
     scaling = np.array(data['scaling'])
     mask = np.array(data['mask'])
     offset = np.array(data['offset'])
@@ -167,22 +164,22 @@ def write_cluster_group_tsv(IDs, quality, output_directory):
 
     cluster_quality = []
     cluster_index = []
-    
+
     for idx, ID in enumerate(IDs):
-        
+
         cluster_index.append(ID)
-        
+
         if quality[idx] == 0:
             cluster_quality.append('unsorted')
         elif quality[idx] == 1:
             cluster_quality.append('good')
         else:
             cluster_quality.append('noise')
-       
+
     df = pd.DataFrame(data={'cluster_id' : cluster_index, 'group': cluster_quality})
-    
+
     print('Saving data...')
-    
+
     df.to_csv(os.path.join(output_directory, 'cluster_group.tsv'), sep='\t', index=False)
 
 
@@ -234,10 +231,10 @@ def load(folder, filename):
     return np.load(os.path.join(folder, filename))
 
 
-def load_kilosort_data(folder, 
-                       sample_rate = None, 
-                       convert_to_seconds = True, 
-                       use_master_clock = False, 
+def load_kilosort_data(folder,
+                       sample_rate = None,
+                       convert_to_seconds = True,
+                       use_master_clock = False,
                        include_pcs = False,
                        template_zero_padding= 21):
 
@@ -269,7 +266,7 @@ def load_kilosort_data(folder,
         Template IDs for N spikes
     amplitudes : numpy.ndarray (N x 0)
         Amplitudes for N spikes
-    unwhitened_temps : numpy.ndarray (M x samples x channels) 
+    unwhitened_temps : numpy.ndarray (M x samples x channels)
         Templates for M units
     channel_map : numpy.ndarray
         Channels from original data file used for sorting
@@ -288,7 +285,7 @@ def load_kilosort_data(folder,
         spike_times = load(folder,'spike_times_master_clock.npy')
     else:
         spike_times = load(folder,'spike_times.npy')
-        
+
     spike_clusters = load(folder,'spike_clusters.npy')
     spike_templates = load(folder, 'spike_templates.npy')
     amplitudes = load(folder,'amplitudes.npy')
@@ -298,21 +295,21 @@ def load_kilosort_data(folder,
 
     if include_pcs:
         pc_features = load(folder, 'pc_features.npy')
-        pc_feature_ind = load(folder, 'pc_feature_ind.npy') 
-                
+        pc_feature_ind = load(folder, 'pc_feature_ind.npy')
+
     templates = templates[:,template_zero_padding:,:] # remove zeros
     spike_clusters = np.squeeze(spike_clusters) # fix dimensions
     spike_times = np.squeeze(spike_times)# fix dimensions
 
     if convert_to_seconds and sample_rate is not None:
-       spike_times = spike_times / sample_rate 
-                    
+       spike_times = spike_times / sample_rate
+
     unwhitened_temps = np.zeros((templates.shape))
-    
+
     for temp_idx in range(templates.shape[0]):
-        
+
         unwhitened_temps[temp_idx,:,:] = np.dot(np.ascontiguousarray(templates[temp_idx,:,:]),np.ascontiguousarray(unwhitening_mat))
-                    
+
     try:
         cluster_ids, cluster_quality = read_cluster_group_tsv(os.path.join(folder, 'cluster_group.tsv'))
     except OSError:
@@ -369,7 +366,7 @@ def get_spike_amplitudes(spike_templates, templates, amplitudes):
     -------
     spike_templates : numpy.ndarray (N x 0)
         Template IDs for N spikes
-    templates : numpy.ndarray (M x samples x channels) 
+    templates : numpy.ndarray (M x samples x channels)
         Unwhitened templates for M units
     amplitudes : numpy.ndarray (N x 0)
         Amplitudes for N spikes
@@ -387,41 +384,8 @@ def get_spike_amplitudes(spike_templates, templates, amplitudes):
 
     return np.squeeze(spike_amplitudes)
 
-
-
-def get_repo_commit_date_and_hash(repo_location):
-
-    """
-    Finds the date and hash of the latest commit in a git repository
-
-    Input:
-    ------
-    repo_location - String
-        Local directory containing the git repository
-
-    Outputs:
-    --------
-    commit_date - String
-        Date string of the latest commit
-    commit_hash - String
-        Hash of the latest commit
-
-    """
-
-    if os.path.exists(repo_location):
-        repo = Repo(repo_location)
-        headcommit = repo.head.commit
-        commit_date = time.strftime("%a, %d %b %Y %H:%M", time.gmtime(headcommit.committed_date))
-        commit_hash = headcommit.hexsha
-    else:
-        commit_date = 'repository not available'
-        commit_hash = 'repository not available'
-
-    return commit_date, commit_hash
-
-
 def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 0, length = 40, fill = '▒'):
-    
+
     """
     Call in a loop to create terminal progress bar
 
@@ -447,14 +411,14 @@ def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 0, l
     Outputs:
     --------
     None
-    
+
     """
-    
+
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '░' * (length - filledLength)
     sys.stdout.write('\r%s %s %s%% %s' % (prefix, bar, percent, suffix))
     sys.stdout.flush()
 
-    if iteration == total: 
+    if iteration == total:
         print()
