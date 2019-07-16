@@ -16,11 +16,8 @@ from .common import Epoch
 from .common import printProgressBar, get_spike_depths
 
 
-# def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, \
-#                       pc_features, pc_feature_ind, params, epochs = None):
-
-def calculate_metrics(spike_times, spike_clusters, channel_map, pc_features, \
-                      pc_feature_ind, params, cluster_ids=None, epochs = None):
+def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, \
+                      pc_features, pc_feature_ind, params,  cluster_ids=None, epochs = None):
 
     """ Calculate metrics for all units on one probe
 
@@ -62,10 +59,6 @@ def calculate_metrics(spike_times, spike_clusters, channel_map, pc_features, \
     if epochs is None:
         epochs = [Epoch('complete_session', 0, np.inf)]
 
-    # spike_times = spike_times.flatten('F')
-    # spike_clusters = spike_clusters.flatten('F')
-    # amplitudes = amplitudes.flatten('F')
-
     total_units = np.max(spike_clusters) + 1
     total_epochs = len(epochs)
 
@@ -84,8 +77,8 @@ def calculate_metrics(spike_times, spike_clusters, channel_map, pc_features, \
         print("Calculating firing rate")
         firing_rate, num_spikes = calculate_firing_rate(spike_times[in_epoch], spike_clusters[in_epoch], total_units)
 
-        # print("Calculating amplitude cutoff")
-        # amplitude_cutoff = calculate_amplitude_cutoff(spike_clusters[in_epoch], amplitudes[in_epoch], total_units)
+        print("Calculating amplitude cutoff")
+        amplitude_cutoff = calculate_amplitude_cutoff(spike_clusters[in_epoch], amplitudes[in_epoch], total_units)
 
         print("Calculating PC-based metrics")
         isolation_distance, l_ratio, d_prime, nn_hit_rate, nn_miss_rate = calculate_pc_metrics(spike_clusters[in_epoch],
@@ -124,7 +117,7 @@ def calculate_metrics(spike_times, spike_clusters, channel_map, pc_features, \
                                 ('firing_rate' , firing_rate),
                                 ('presence_ratio' , presence_ratio),
                                 ('isi_viol' , isi_viol),
-                                # ('amplitude_cutoff' , amplitude_cutoff),
+                                ('amplitude_cutoff' , amplitude_cutoff),
                                 ('isolation_distance' , isolation_distance),
                                 ('l_ratio' , l_ratio),
                                 ('d_prime' , d_prime),
@@ -205,21 +198,21 @@ def calculate_firing_rate(spike_times, spike_clusters, total_units):
     return firing_rates, num_spikes
 
 
-# def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units):
-#
-#     cluster_ids = np.unique(spike_clusters)
-#
-#     amplitude_cutoffs = np.zeros((total_units,))
-#
-#     for idx, cluster_id in enumerate(cluster_ids):
-#
-#         printProgressBar(idx+1, total_units)
-#
-#
-#         for_this_cluster = (spike_clusters == cluster_id)
-#         amplitude_cutoffs[cluster_id] = amplitude_cutoff(amplitudes[for_this_cluster])
-#
-#     return amplitude_cutoffs
+def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units):
+
+    cluster_ids = np.unique(spike_clusters)
+
+    amplitude_cutoffs = np.zeros((total_units,))
+
+    for idx, cluster_id in enumerate(cluster_ids):
+
+        printProgressBar(idx+1, total_units)
+
+
+        for_this_cluster = (spike_clusters == cluster_id)
+        amplitude_cutoffs[cluster_id] = amplitude_cutoff(amplitudes[for_this_cluster])
+
+    return amplitude_cutoffs
 
 
 def calculate_pc_metrics(spike_clusters,
@@ -529,42 +522,42 @@ def firing_rate(spike_train, min_time = None, max_time = None):
     return fr
 
 
-# def amplitude_cutoff(amplitudes, num_histogram_bins = 500, histogram_smoothing_value = 3):
-#
-#     """ Calculate approximate fraction of spikes missing from a distribution of amplitudes
-#
-#     Assumes the amplitude histogram is symmetric (not valid in the presence of drift)
-#
-#     Inspired by metric described in Hill et al. (2011) J Neurosci 31: 8699-8705
-#
-#     Input:
-#     ------
-#     amplitudes : numpy.ndarray
-#         Array of amplitudes (don't need to be in physical units)
-#
-#     Output:
-#     -------
-#     fraction_missing : float
-#         Fraction of missing spikes (0-0.5)
-#         If more than 50% of spikes are missing, an accurate estimate isn't possible
-#
-#     """
-#
-#
-#     h,b = np.histogram(amplitudes, num_histogram_bins, density=True)
-#
-#     pdf = gaussian_filter1d(h,histogram_smoothing_value)
-#     support = b[:-1]
-#
-#     peak_index = np.argmax(pdf)
-#     G = np.argmin(np.abs(pdf[peak_index:] - pdf[0])) + peak_index
-#
-#     bin_size = np.mean(np.diff(support))
-#     fraction_missing = np.sum(pdf[G:])*bin_size
-#
-#     fraction_missing = np.min([fraction_missing, 0.5])
-#
-#     return fraction_missing
+def amplitude_cutoff(amplitudes, num_histogram_bins = 500, histogram_smoothing_value = 3):
+
+    """ Calculate approximate fraction of spikes missing from a distribution of amplitudes
+
+    Assumes the amplitude histogram is symmetric (not valid in the presence of drift)
+
+    Inspired by metric described in Hill et al. (2011) J Neurosci 31: 8699-8705
+
+    Input:
+    ------
+    amplitudes : numpy.ndarray
+        Array of amplitudes (don't need to be in physical units)
+
+    Output:
+    -------
+    fraction_missing : float
+        Fraction of missing spikes (0-0.5)
+        If more than 50% of spikes are missing, an accurate estimate isn't possible
+
+    """
+
+
+    h,b = np.histogram(amplitudes, num_histogram_bins, density=True)
+
+    pdf = gaussian_filter1d(h,histogram_smoothing_value)
+    support = b[:-1]
+
+    peak_index = np.argmax(pdf)
+    G = np.argmin(np.abs(pdf[peak_index:] - pdf[0])) + peak_index
+
+    bin_size = np.mean(np.diff(support))
+    fraction_missing = np.sum(pdf[G:])*bin_size
+
+    fraction_missing = np.min([fraction_missing, 0.5])
+
+    return fraction_missing
 
 
 def mahalanobis_metrics(all_pcs, all_labels, this_unit_id):
