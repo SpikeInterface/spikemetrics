@@ -3,9 +3,10 @@
 import h5py as h5
 import numpy as np
 
-
-class Epoch():
-
+'''
+Alessio: I think that this can go into utils
+'''
+class Epoch:
     """
     Represents a data epoch with a start time (in seconds), an end time (in seconds), and a name
 
@@ -30,7 +31,7 @@ class Epoch():
         self.start_index = None
         self.end_index = None
 
-    def convert_to_index(timestamps):
+    def convert_to_index(self, timestamps):
 
         """ Converts start/end times to start/end indices
 
@@ -47,17 +48,17 @@ class Epoch():
             self.end_index = np.argmin(np.abs(timestamps - self.end_time))
         else:
             self.end_index = timestamps.size
-            
+
     def __str__(self):
         return str(self.name) + ": " + str((self.start_time, self.end_time))
-    
+
     def __repr__(self):
         return str(self)
 
-
-
+'''
+Alessio: I think this should be removed
+'''
 def get_epochs_from_nwb_file(filename):
-
     nwb = h5.File(filename)
 
     epochs = []
@@ -67,11 +68,11 @@ def get_epochs_from_nwb_file(filename):
     for stim_idx, stimulus in enumerate(stimuli):
 
         if stimulus != 'optotagging' and stimulus != 'spontaneous':
-            
-            trial_times = np.squeeze(nwb['stimulus']['presentation'][stimulus]['timestamps'][:,0])
+
+            trial_times = np.squeeze(nwb['stimulus']['presentation'][stimulus]['timestamps'][:, 0])
             trial_data = nwb['stimulus']['presentation'][stimulus]['data']
             stimulus_features = [i.decode('utf-8') for i in nwb['stimulus']['presentation'][stimulus]['features']]
-            
+
             if stimulus.find('natural_movie') > -1:
                 movie_start_inds = np.where(trial_data == 0)[0]
                 trial_times = trial_times[movie_start_inds]
@@ -80,7 +81,7 @@ def get_epochs_from_nwb_file(filename):
                 epoch1_end = np.max(trial_times)
             elif stimulus.find('drifting_gratings_more_repeats') > -1:
                 gap = np.where(np.diff(trial_times) > 5)[0][0]
-                epoch3_start = np.mean(trial_times[gap:gap+2])
+                epoch3_start = np.mean(trial_times[gap:gap + 2])
             elif stimulus.find('static_gratings') > -1:
                 epoch3_start = np.min(trial_times)
 
