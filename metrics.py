@@ -17,7 +17,7 @@ from .common import printProgressBar, get_spike_depths
 
 
 def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, \
-                      pc_features, pc_feature_ind, params,  cluster_ids=None, epochs = None):
+                      pc_features, pc_feature_ind, params, cluster_ids=None, epochs = None):
 
     """ Calculate metrics for all units on one probe
 
@@ -75,7 +75,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, channel_map, \
         presence_ratio = calculate_presence_ratio(spike_times[in_epoch], spike_clusters[in_epoch], total_units)
 
         print("Calculating firing rate")
-        firing_rate, num_spikes = calculate_firing_rate(spike_times[in_epoch], spike_clusters[in_epoch], total_units)
+        firing_rate, num_spikes = calculate_firing_rate_and_spikes(spike_times[in_epoch], spike_clusters[in_epoch], total_units)
 
         print("Calculating amplitude cutoff")
         amplitude_cutoff = calculate_amplitude_cutoff(spike_clusters[in_epoch], amplitudes[in_epoch], total_units)
@@ -174,8 +174,7 @@ def calculate_presence_ratio(spike_times, spike_clusters, total_units):
     return ratios
 
 
-
-def calculate_firing_rate(spike_times, spike_clusters, total_units):
+def calculate_firing_rate_and_spikes(spike_times, spike_clusters, total_units):
 
     cluster_ids = np.unique(spike_clusters)
 
