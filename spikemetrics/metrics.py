@@ -12,7 +12,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats import chi2
 from scipy.ndimage.filters import gaussian_filter1d
 
-from .epoch import Epoch
+from .utils import Epoch
 from .utils import printProgressBar, get_spike_depths
 
 
