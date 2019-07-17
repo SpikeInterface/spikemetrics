@@ -8,6 +8,63 @@ import glob
 import sys
 import time
 
+# Copyright © 2019. Allen Institute.  All rights reserved.
+
+# import h5py as h5
+import numpy as np
+
+
+class Epoch:
+    """
+    Represents a data epoch with a start time (in seconds), an end time (in seconds), and a name
+
+    Optionally includes a start_index and an end_index
+
+    """
+
+    def __init__(self, name, start_time, end_time):
+
+        """
+        name : str
+            Name of epoch
+        start_time : float
+            Start time in seconds
+        end_time : float
+            End time in seconds (can be Inf to use the full file)
+        """
+
+        self.start_time = start_time
+        self.end_time = end_time
+        self.name = name
+        self.start_index = None
+        self.end_index = None
+
+    def convert_to_index(self, timestamps):
+
+        """ Converts start/end times to start/end indices
+
+        Input:
+        ------
+        timestamps : numpy.ndarray (float)
+            Array of timestamps for each sample
+
+        """
+
+        self.start_index = np.argmin(np.abs(timestamps - self.start_time))
+
+        if self.end_time != np.Inf:
+            self.end_index = np.argmin(np.abs(timestamps - self.end_time))
+        else:
+            self.end_index = timestamps.size
+
+    def __str__(self):
+        return str(self.name) + ": " + str((self.start_time, self.end_time))
+
+    def __repr__(self):
+        return str(self)
+
+
+
 def find_range(x,a,b,option='within'):
 
     """
