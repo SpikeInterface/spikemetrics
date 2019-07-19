@@ -401,10 +401,10 @@ def get_spike_depths(spike_clusters, pc_features, pc_feature_ind):
         Distance (in microns) from each spike waveform from the probe tip
 
     """
-
-    pc_features = np.squeeze(pc_features[:,0,:])
-    pc_features[pc_features < 0] = 0
-    pc_power = pow(pc_features,2)
+    pc_features_drift = np.copy(pc_features)
+    pc_features_drift = np.squeeze(pc_features_drift[:,0,:])
+    pc_features_drift[pc_features_drift < 0] = 0
+    pc_power = pow(pc_features_drift,2)
     spike_feat_ind = pc_feature_ind[spike_clusters, :]
     spike_depths = np.sum(spike_feat_ind * pc_power) / np.sum(pc_power,1)
 
