@@ -343,8 +343,7 @@ def calculate_silhouette_score(spike_clusters,
                                pc_feature_ind,
                                spikes_for_silhouette,
                                seed=0):
-    np.random.seed(seed)
-    random_spike_inds = np.random.permutation(spike_clusters.size)
+    random_spike_inds = np.random.RandomState(seed=seed).permutation(spike_clusters.size)
     random_spike_inds = random_spike_inds[:spikes_for_silhouette]
     num_pc_features = pc_features.shape[1]
 
@@ -755,8 +754,7 @@ def make_index_mask(spike_clusters, unit_id, min_num, max_num, seed=0):
         index_mask = np.zeros((spike_clusters.size,), dtype='bool')
     else:
         index_mask = np.zeros((spike_clusters.size,), dtype='bool')
-        np.random.seed(seed)
-        order = np.random.permutation(inds.size)
+        order = np.random.RandomState(seed=seed).permutation(inds.size)
         index_mask[inds[order[:max_num]]] = True
 
     return index_mask
