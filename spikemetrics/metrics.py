@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
+import math
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.neighbors import NearestNeighbors
@@ -320,6 +321,7 @@ def calculate_pc_metrics(spike_clusters,
         else:
 
             isolation_distances[cluster_id] = np.nan
+            l_ratios[cluster_id] = np.nan
             d_primes[cluster_id] = np.nan
             nn_hit_rates[cluster_id] = np.nan
             nn_miss_rates[cluster_id] = np.nan
@@ -602,6 +604,8 @@ def mahalanobis_metrics(all_pcs, all_labels, this_unit_id):
         dof = pcs_for_this_unit.shape[1] # number of features
         l_ratio = np.sum(1 - chi2.cdf(pow(mahalanobis_other,2), dof)) / mahalanobis_other.shape[0]
         isolation_distance = pow(mahalanobis_other[n-1],2)
+        # if math.isnan(l_ratio):
+        #     print("NaN detected", mahalanobis_other, VI)
     else:
         l_ratio = np.nan
         isolation_distance = np.nan
