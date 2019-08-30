@@ -64,9 +64,7 @@ class Epoch:
         return str(self)
 
 
-
-def find_range(x,a,b,option='within'):
-
+def find_range(x, a, b, option='within'):
     """
     Find indices of data within or outside range [a,b]
 
@@ -88,16 +86,15 @@ def find_range(x,a,b,option='within'):
 
     """
 
-    if option=='within':
-        return np.where(np.logical_and(x>=a, x<=b))[0]
-    elif option=='outside':
+    if option == 'within':
+        return np.where(np.logical_and(x >= a, x <= b))[0]
+    elif option == 'outside':
         return np.where(np.logical_or(x < a, x > b))[0]
     else:
         raise ValueError('unrecognized option paramter: {}'.format(option))
 
 
 def rms(data):
-
     """
     Computes root-mean-squared voltage of a signal
 
@@ -111,10 +108,11 @@ def rms(data):
 
     """
 
-    return np.power(np.mean(np.power(data.astype('float32'),2)),0.5)
+    return np.power(np.mean(np.power(data.astype('float32'), 2)), 0.5)
 
-def write_probe_json(output_file, channels, offset, scaling, mask, surface_channel, air_channel, vertical_pos, horizontal_pos):
 
+def write_probe_json(output_file, channels, offset, scaling, mask, surface_channel, air_channel, vertical_pos,
+                     horizontal_pos):
     """
     Writes a json file containing information about one Neuropixels probe.
 
@@ -147,23 +145,23 @@ def write_probe_json(output_file, channels, offset, scaling, mask, surface_chann
 
     with open(output_file, 'w') as outfile:
         json.dump(
-                  {
-                        'channel' : channels.tolist(),
-                        'offset' : offset.tolist(),
-                        'scaling' : scaling.tolist(),
-                        'mask' : mask.tolist(),
-                        'surface_channel' : surface_channel,
-                        'air_channel' : air_channel,
-                        'vertical_pos' : vertical_pos.tolist(),
-                        'horizontal_pos' : horizontal_pos.tolist()
-                   },
+            {
+                'channel': channels.tolist(),
+                'offset': offset.tolist(),
+                'scaling': scaling.tolist(),
+                'mask': mask.tolist(),
+                'surface_channel': surface_channel,
+                'air_channel': air_channel,
+                'vertical_pos': vertical_pos.tolist(),
+                'horizontal_pos': horizontal_pos.tolist()
+            },
 
-                  outfile,
-                  indent = 4, separators = (',', ': ')
-                 )
+            outfile,
+            indent=4, separators=(',', ': ')
+        )
+
 
 def read_probe_json(input_file):
-
     """
     Reads a json file containing information about one Neuropixels probe.
 
@@ -200,7 +198,6 @@ def read_probe_json(input_file):
 
 
 def write_cluster_group_tsv(IDs, quality, output_directory):
-
     """
     Writes a tab-separated cluster_group.tsv file
 
@@ -233,7 +230,7 @@ def write_cluster_group_tsv(IDs, quality, output_directory):
         else:
             cluster_quality.append('noise')
 
-    df = pd.DataFrame(data={'cluster_id' : cluster_index, 'group': cluster_quality})
+    df = pd.DataFrame(data={'cluster_id': cluster_index, 'group': cluster_quality})
 
     print('Saving data...')
 
@@ -241,7 +238,6 @@ def write_cluster_group_tsv(IDs, quality, output_directory):
 
 
 def read_cluster_group_tsv(filename):
-
     """
     Reads a tab-separated cluster_group.tsv file from disk
 
@@ -260,14 +256,13 @@ def read_cluster_group_tsv(filename):
     """
 
     info = np.genfromtxt(filename, dtype='str')
-    cluster_ids = info[1:,0].astype('int')
-    cluster_quality = info[1:,1]
+    cluster_ids = info[1:, 0].astype('int')
+    cluster_quality = info[1:, 1]
 
     return cluster_ids, cluster_quality
 
 
 def load(folder, filename):
-
     """
     Loads a numpy file from a folder.
 
@@ -289,12 +284,11 @@ def load(folder, filename):
 
 
 def load_kilosort_data(folder,
-                       sample_rate = None,
-                       convert_to_seconds = True,
-                       use_master_clock = False,
-                       include_pcs = False,
-                       template_zero_padding= 21):
-
+                       sample_rate=None,
+                       convert_to_seconds=True,
+                       use_master_clock=False,
+                       include_pcs=False,
+                       template_zero_padding=21):
     """
     Loads Kilosort output files from a directory
 
@@ -339,33 +333,33 @@ def load_kilosort_data(folder,
     """
 
     if use_master_clock:
-        spike_times = load(folder,'spike_times_master_clock.npy')
+        spike_times = load(folder, 'spike_times_master_clock.npy')
     else:
-        spike_times = load(folder,'spike_times.npy')
+        spike_times = load(folder, 'spike_times.npy')
 
-    spike_clusters = load(folder,'spike_clusters.npy')
+    spike_clusters = load(folder, 'spike_clusters.npy')
     spike_templates = load(folder, 'spike_templates.npy')
-    amplitudes = load(folder,'amplitudes.npy')
-    templates = load(folder,'templates.npy')
-    unwhitening_mat = load(folder,'whitening_mat_inv.npy')
+    amplitudes = load(folder, 'amplitudes.npy')
+    templates = load(folder, 'templates.npy')
+    unwhitening_mat = load(folder, 'whitening_mat_inv.npy')
     channel_map = load(folder, 'channel_map.npy')
 
     if include_pcs:
         pc_features = load(folder, 'pc_features.npy')
         pc_feature_ind = load(folder, 'pc_feature_ind.npy')
 
-    templates = templates[:,template_zero_padding:,:] # remove zeros
-    spike_clusters = np.squeeze(spike_clusters) # fix dimensions
-    spike_times = np.squeeze(spike_times)# fix dimensions
+    templates = templates[:, template_zero_padding:, :]  # remove zeros
+    spike_clusters = np.squeeze(spike_clusters)  # fix dimensions
+    spike_times = np.squeeze(spike_times)  # fix dimensions
 
     if convert_to_seconds and sample_rate is not None:
-       spike_times = spike_times / sample_rate
+        spike_times = spike_times / sample_rate
 
     unwhitened_temps = np.zeros((templates.shape))
 
     for temp_idx in range(templates.shape[0]):
-
-        unwhitened_temps[temp_idx,:,:] = np.dot(np.ascontiguousarray(templates[temp_idx,:,:]),np.ascontiguousarray(unwhitening_mat))
+        unwhitened_temps[temp_idx, :, :] = np.dot(np.ascontiguousarray(templates[temp_idx, :, :]),
+                                                  np.ascontiguousarray(unwhitening_mat))
 
     try:
         cluster_ids, cluster_quality = read_cluster_group_tsv(os.path.join(folder, 'cluster_group.tsv'))
@@ -380,7 +374,6 @@ def load_kilosort_data(folder,
 
 
 def get_spike_depths(spike_clusters, pc_features, pc_feature_ind):
-
     """
     Calculates the distance (in microns) of individual spikes from the probe tip
 
@@ -402,17 +395,16 @@ def get_spike_depths(spike_clusters, pc_features, pc_feature_ind):
 
     """
     pc_features_drift = np.copy(pc_features)
-    pc_features_drift = np.squeeze(pc_features_drift[:,0,:])
+    pc_features_drift = np.squeeze(pc_features_drift[:, 0, :])
     pc_features_drift[pc_features_drift < 0] = 0
-    pc_power = pow(pc_features_drift,2)
+    pc_power = pow(pc_features_drift, 2)
     spike_feat_ind = pc_feature_ind[spike_clusters, :]
-    spike_depths = np.sum(spike_feat_ind * pc_power) / np.sum(pc_power,1)
+    spike_depths = np.sum(spike_feat_ind * pc_power) / np.sum(pc_power, 1)
 
     return spike_depths * 10
 
 
 def get_spike_amplitudes(spike_templates, templates, amplitudes):
-
     """
     Calculates the amplitude of individual spikes, based on the original template
     plus a scaling factor
@@ -435,14 +427,14 @@ def get_spike_amplitudes(spike_templates, templates, amplitudes):
 
     """
 
-    template_amplitudes = np.max(np.max(templates,1) - np.min(templates,1),1)
+    template_amplitudes = np.max(np.max(templates, 1) - np.min(templates, 1), 1)
 
     spike_amplitudes = template_amplitudes[spike_templates] * amplitudes
 
     return np.squeeze(spike_amplitudes)
 
-def printProgressBar(iteration, total, prefix = '', suffix = '', decimals = 0, length = 40, fill = '▒'):
 
+def printProgressBar(iteration, total, prefix='', suffix='', decimals=0, length=40, fill='▒'):
     """
     Call in a loop to create terminal progress bar
 
