@@ -118,7 +118,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
             cluster_ids_out = np.arange(total_units)
         else:
             cluster_ids_out = cluster_ids
-        epoch_name = [epoch.name] * len(cluster_ids)
+        epoch_name = [epoch.name] * len(cluster_ids_out)
 
         metrics = pd.concat((metrics, pd.DataFrame(data=OrderedDict((('cluster_id', cluster_ids_out),
                                                                      ('num_spikes', num_spikes),
