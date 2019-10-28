@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from spikemetrics import calculate_amplitude_cutoff, calculate_drift_metrics, calculate_firing_rate_and_spikes, \
     calculate_isi_violations, calculate_pc_metrics, calculate_silhouette_score, calculate_presence_ratio, \
@@ -8,6 +9,26 @@ from spikemetrics.metrics import isi_violations, firing_rate
 
 from spikemetrics.tests.utils import simulated_spike_train
 
+@pytest.fixture
+def simulated_spikes():
+    max_time = 100
+    train1 = simulated_spike_train(max_time, 10, 2)
+    train2 = simulated_spike_train(max_time, 5, 4)
+    train3 = simulated_spike_train(max_time, 5, 10)
+
+    labels1 = np.ones((train1.shape), dtype='int') * 0   
+    labels2 = np.ones((train2.shape), dtype='int') * 1
+    labels3 = np.ones((train3.shape), dtype='int') * 2
+
+    spike_times = np.concatenate((train1, train2, train3))
+    spike_clusters = np.concatenate((labels1, labels2, labels3))
+
+    order = np.argsort(spike_times)
+
+    spike_times = spike_times[order]
+    spike_clusters = spike_clusters[order]
+
+    return {'spike_times' : spike_times, 'spike_clusters' : spike_clusters}
 
 
 def test_calculate_amplitude_cutoff():
@@ -35,32 +56,25 @@ def test_calculate_metrics():
     pass
 
 
-def test_calculate_firing_rate_and_spikes():
-    pass
+def test_calculate_firing_rate_and_spikes(simulated_spikes):
+
+    firing_rates, spike_counts = calculate_firing_rate_and_spikes(simulated_spikes['spike_times'], 
+                                    simulated_spikes['spike_clusters'], 
+                                    3, verbose=False)
+
+    print(firing_rates)
+
+    assert np.allclose(firing_rates, np.array([10.03003003,  5.04504505,  5.10510511]))
+    assert np.allclose(spike_counts, np.array([1002, 504, 510]))
 
 
-def test_calculate_isi_violations():
+def test_calculate_isi_violations(simulated_spikes):
 
-    max_time = 100
-    train1 = simulated_spike_train(max_time, 10, 2)
-    train2 = simulated_spike_train(max_time, 5, 4)
-    train3 = simulated_spike_train(max_time, 5, 10)
+    viol = calculate_isi_violations(simulated_spikes['spike_times'], 
+                                    simulated_spikes['spike_clusters'], 
+                                    3, 0.001, 0.0, verbose=False)
 
-    labels1 = np.ones((train1.shape), dtype='int') * 0   
-    labels2 = np.ones((train2.shape), dtype='int') * 1
-    labels3 = np.ones((train3.shape), dtype='int') * 2
-
-    spike_times = np.concatenate((train1, train2, train3))
-    spike_clusters = np.concatenate((labels1, labels2, labels3))
-
-    order = np.argsort(spike_times)
-
-    spike_times = spike_times[order]
-    spike_clusters = spike_clusters[order]
-
-    viol = calculate_isi_violations(spike_times, spike_clusters, 3, 0.001, 0.0, verbose=False)
-
-    assert np.allclose(viol, array([0.0995016 , 0.78656463, 1.92041522]))
+    assert np.allclose(viol, np.array([0.0995016 , 0.78656463, 1.92041522]))
 
 
 def test_isi_violations():
