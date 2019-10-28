@@ -477,6 +477,8 @@ def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=None)
     if min_isi is not None:
         duplicate_spikes = np.where(isis <= min_isi)[0]
         spike_train = np.delete(spike_train, duplicate_spikes + 1)
+    else:
+        min_isi = 0
     
     num_spikes = len(spike_train)
     num_violations = sum(isis < isi_threshold)
