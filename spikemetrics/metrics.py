@@ -511,16 +511,13 @@ def presence_ratio(spike_train, min_time, max_time, num_bins=100):
 def firing_rate(spike_train, min_time=None, max_time=None):
     """Calculate firing rate for a spike train.
 
-    If no temporal bounds are specified, the first and last spike time are used.
+    If either temporal bound is not specified, the first and last spike time are used by default.
 
     Inputs:
     -------
-    spike_train : numpy.ndarray
-        Array of spike times in seconds
-    min_time : float
-        Time of first possible spike (optional)
-    max_time : float
-        Time of last possible spike (optional)
+    spike_train : array of spike times (in seconds)
+    min_time : time of first possible spike (optional)
+    max_time : time of last possible spike (optional)
 
     Outputs:
     --------
@@ -529,11 +526,13 @@ def firing_rate(spike_train, min_time=None, max_time=None):
 
     """
 
-    if min_time is not None and max_time is not None:
-        duration = max_time - min_time
-    else:
-        duration = np.max(spike_train) - np.min(spike_train)
+    if min_time is None:
+        min_time = np.min(spike_train) 
 
+    if max_time is None:
+        max_time = np.max(spike_train)
+
+    duration = max_time - min_time
     fr = spike_train.size / duration
 
     return fr
