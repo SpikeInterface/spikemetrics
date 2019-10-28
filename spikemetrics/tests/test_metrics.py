@@ -18,15 +18,6 @@ def test_calculate_drift_metrics():
     pass
 
 
-def test_calculate_firing_rate_and_spikes():
-    pass
-
-
-def test_calculate_isi_violations():
-
-    pass
-
-
 def test_calculate_pc_metrics():
     pass
 
@@ -42,6 +33,34 @@ def test_calculate_presence_ratio():
 def test_calculate_metrics():
     
     pass
+
+
+def test_calculate_firing_rate_and_spikes():
+    pass
+
+
+def test_calculate_isi_violations():
+
+    max_time = 100
+    train1 = simulated_spike_train(max_time, 10, 2)
+    train2 = simulated_spike_train(max_time, 5, 4)
+    train3 = simulated_spike_train(max_time, 5, 10)
+
+    labels1 = np.ones((train1.shape), dtype='int') * 0   
+    labels2 = np.ones((train2.shape), dtype='int') * 1
+    labels3 = np.ones((train3.shape), dtype='int') * 2
+
+    spike_times = np.concatenate((train1, train2, train3))
+    spike_clusters = np.concatenate((labels1, labels2, labels3))
+
+    order = np.argsort(spike_times)
+
+    spike_times = spike_times[order]
+    spike_clusters = spike_clusters[order]
+
+    viol = calculate_isi_violations(spike_times, spike_clusters, 3, 0.001, 0.0, verbose=False)
+
+    assert np.allclose(viol, array([0.0995016 , 0.78656463, 1.92041522]))
 
 
 def test_isi_violations():
@@ -97,5 +116,5 @@ def test_firing_rate():
 
     # 2. check that widening the boundaries decreases the rate:
 
-    assert firing_rate(train, min_time=0, max_time=100) > firing_rate(train, min_time=0, max_time =200)
+    assert firing_rate(train, min_time=0, max_time=100) > firing_rate(train, min_time=0, max_time=200)
 
