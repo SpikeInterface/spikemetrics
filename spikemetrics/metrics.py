@@ -444,36 +444,40 @@ def calculate_drift_metrics(spike_times,
 # ==========================================================
 
 
-def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=0):
-    """Calculate ISI violations for a spike train.
+def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=None):
+    """Calculate Inter-Spike Interval (ISI) violations for a spike train.
 
     Based on metric described in Hill et al. (2011) J Neurosci 31: 8699-8705
 
-    modified by Dan Denman from cortex-lab/sortingQuality GitHub by Nick Steinmetz
+    Originally written in Matlab by Nick Steinmetz (https://github.com/cortex-lab/sortingQuality)
+    Converted to Python by Daniel Denman
 
     Inputs:
     -------
-    spike_train : array of spike times
-    min_time : minimum time for potential spikes
-    max_time : maximum time for potential spikes
-    isi_threshold : threshold for isi violation
-    min_isi : threshold for duplicate spikes
+    spike_train : array of monotonically increasing spike times (in seconds) [t1, t2, t3, ...]
+    min_time : start of recording (in seconds)
+    max_time : end of recording (in seconds)
+    isi_threshold : threshold for classifying adjacent spikes as an ISI violation
+      - this is the biophysical refractory period
+    min_isi : minimum possible inter-spike interval (default = None)
+      - this is the artificial refractory period enforced by the data acquisition system
+        or post-processing algorithms
+      - if set to None, all spikes will be included
 
     Outputs:
     --------
     fpRate : rate of contaminating spikes as a fraction of overall rate
-        A perfect unit has a fpRate = 0
-        A unit with some contamination has a fpRate < 0.5
-        A unit with lots of contamination has a fpRate > 1.0
-    num_violations : total number of violations
+      - higher values indicate more contamination
+    num_violations : total number of violations detected
 
     """
 
-    duplicate_spikes = np.where(np.diff(spike_train) <= min_isi)[0]
-
-    spike_train = np.delete(spike_train, duplicate_spikes + 1)
     isis = np.diff(spike_train)
 
+    if min_isi is not None:
+        duplicate_spikes = np.where(isis <= min_isi)[0]
+        spike_train = np.delete(spike_train, duplicate_spikes + 1)
+    
     num_spikes = len(spike_train)
     num_violations = sum(isis < isi_threshold)
     violation_time = 2 * num_spikes * (isi_threshold - min_isi)
