@@ -5,13 +5,15 @@ from spikemetrics import calculate_amplitude_cutoff, calculate_drift_metrics, ca
     calculate_isi_violations, calculate_pc_metrics, calculate_silhouette_score, calculate_presence_ratio, \
     calculate_metrics
 
-from spikemetrics.metrics import isi_violations, firing_rate
+from spikemetrics.metrics import isi_violations, firing_rate, presence_ratio
 
 from spikemetrics.tests.utils import simulated_spike_train
 
 @pytest.fixture
 def simulated_spikes():
+
     max_time = 100
+
     train1 = simulated_spike_train(max_time, 10, 2)
     train2 = simulated_spike_train(max_time, 5, 4)
     train3 = simulated_spike_train(max_time, 5, 10)
@@ -31,6 +33,12 @@ def simulated_spikes():
     return {'spike_times' : spike_times, 'spike_clusters' : spike_clusters}
 
 
+
+def test_calculate_metrics():
+    
+    pass
+
+
 def test_calculate_amplitude_cutoff():
     pass
 
@@ -47,25 +55,32 @@ def test_calculate_silhouette_score():
     pass
 
 
-def test_calculate_presence_ratio():
-    pass
 
 
-def test_calculate_metrics():
-    
-    pass
+def test_calculate_presence_ratio(simulated_spikes):
 
-
-def test_calculate_firing_rate_and_spikes(simulated_spikes):
-
-    firing_rates, spike_counts = calculate_firing_rate_and_spikes(simulated_spikes['spike_times'], 
+    ratios = calculate_presence_ratio(simulated_spikes['spike_times'], 
                                     simulated_spikes['spike_clusters'], 
-                                    3, verbose=False)
+                                    3,
+                                    verbose=False)
 
-    print(firing_rates)
+    assert np.allclose(ratios, np.array([1.0, 1.0, 1.0]))
 
-    assert np.allclose(firing_rates, np.array([10.03003003,  5.04504505,  5.10510511]))
-    assert np.allclose(spike_counts, np.array([1002, 504, 510]))
+
+
+@pytest.mark.parametrize(
+    "overall_duration,expected_value",
+    [
+        [100, 1.0], [150, 0.67], [200, 0.5], [600, 0.17]
+    ],
+)
+def test_presence_ratio(overall_duration, expected_value):
+
+    spike_times = simulated_spike_train(100, 20, 0)
+
+    assert presence_ratio(spike_times, 0, overall_duration) == expected_value
+
+
 
 
 def test_calculate_isi_violations(simulated_spikes):
@@ -104,7 +119,7 @@ def test_isi_violations():
     assert fpRate3 > fpRate1
 
 
-    # 4. check that the value decreases with a longer violation time:
+    # 4. check that the value decreases with a longer violation window:
 
     fpRate4, num_violations4 = isi_violations(train1, 0, np.max(train1), 0.002)
 
@@ -120,13 +135,28 @@ def test_isi_violations():
 
 
 
+def test_calculate_firing_rate_and_spikes(simulated_spikes):
+
+    firing_rates, spike_counts = calculate_firing_rate_and_spikes(simulated_spikes['spike_times'], 
+                                    simulated_spikes['spike_clusters'], 
+                                    3, verbose=False)
+
+    print(firing_rates)
+
+    assert np.allclose(firing_rates, np.array([10.03003003,  5.04504505,  5.10510511]))
+    assert np.allclose(spike_counts, np.array([1002, 504, 510]))
+
+
 def test_firing_rate():
 
     # 1. check that the output value is correct:
 
-    train = simulated_spike_train(100, 10, 0)
+    max_time = 100
+    simulated_firing_rate = 10.0
 
-    assert firing_rate(train, min_time=0, max_time=100) == 10.0
+    train = simulated_spike_train(max_time, simulated_firing_rate, 0)
+
+    assert firing_rate(train, min_time=0, max_time=max_time) == simulated_firing_rate
 
     # 2. check that widening the boundaries decreases the rate:
 
