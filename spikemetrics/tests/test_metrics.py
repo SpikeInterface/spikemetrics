@@ -5,25 +5,23 @@ from spikemetrics import calculate_amplitude_cutoff, calculate_drift_metrics, ca
     calculate_isi_violations, calculate_pc_metrics, calculate_silhouette_score, calculate_presence_ratio, \
     calculate_metrics
 
-from spikemetrics.metrics import isi_violations, firing_rate, presence_ratio
+from spikemetrics.metrics import isi_violations, firing_rate, presence_ratio, amplitude_cutoff
 
-from spikemetrics.tests.utils import simulated_spike_train
+from spikemetrics.tests.utils import simulated_spike_train, simulated_spike_amplitudes
 
 @pytest.fixture
 def simulated_spikes():
 
     max_time = 100
 
-    train1 = simulated_spike_train(max_time, 10, 2)
-    train2 = simulated_spike_train(max_time, 5, 4)
-    train3 = simulated_spike_train(max_time, 5, 10)
+    trains = [simulated_spike_train(max_time, 10, 2),
+              simulated_spike_train(max_time, 5, 4),
+              simulated_spike_train(max_time, 5, 10)]
 
-    labels1 = np.ones((train1.shape), dtype='int') * 0   
-    labels2 = np.ones((train2.shape), dtype='int') * 1
-    labels3 = np.ones((train3.shape), dtype='int') * 2
+    labels = [np.ones((len(trains[i]),), dtype='int') * i for i in range(len(trains))]
 
-    spike_times = np.concatenate((train1, train2, train3))
-    spike_clusters = np.concatenate((labels1, labels2, labels3))
+    spike_times = np.concatenate(trains)
+    spike_clusters = np.concatenate(labels)
 
     order = np.argsort(spike_times)
 
@@ -32,16 +30,24 @@ def simulated_spikes():
 
     return {'spike_times' : spike_times, 'spike_clusters' : spike_clusters}
 
+@pytest.fixture
+def simulated_amplitudes():
+
+    num_spikes = 5000
+
+    amps = [simulated_spike_amplitudes(num_spikes, center, 30) for center in [100, 50, 20, 5]]
+
+    labels = [np.ones((len(amps[i]),), dtype='int') * i for i in range(len(amps))]
+
+    spike_amplitudes = np.concatenate(amps)
+    spike_clusters = np.concatenate(labels)
+
+    return {'spike_amplitudes' : spike_amplitudes, 'spike_clusters' : spike_clusters}
 
 
 def test_calculate_metrics():
     
     pass
-
-
-def test_calculate_amplitude_cutoff():
-    pass
-
 
 def test_calculate_drift_metrics():
     pass
@@ -54,6 +60,26 @@ def test_calculate_pc_metrics():
 def test_calculate_silhouette_score():
     pass
 
+
+
+def test_calculate_amplitude_cutoff(simulated_amplitudes):
+
+
+    amp_cuts = calculate_amplitude_cutoff(simulated_amplitudes['spike_clusters'], 
+                                          simulated_amplitudes['spike_amplitudes'], 
+                                          4, 
+                                          verbose=False)
+
+    assert np.allclose(amp_cuts, np.array([0.0015467, 0.03828989, 0.36565474, 0.5]), rtol=0, atol=1e-5)
+
+
+def test_amplitude_cutoff(): 
+
+    amplitudes = simulated_spike_amplitudes(5000, 100, 30)
+
+    amp_cut = amplitude_cutoff(amplitudes)
+
+    assert np.isclose(amp_cut, 0.001546, rtol=0, atol=1e-5)
 
 
 

@@ -1,5 +1,6 @@
 import numpy as np
 
+from scipy.stats import norm
 
 def create_ground_truth_pc_distributions():
     # HINT: start from Guassians in PC space and stereotyped waveforms and build dataset.
@@ -30,4 +31,28 @@ def simulated_spike_train(duration, baseline_rate, num_violations, violation_del
     spike_train = np.sort(np.concatenate((spike_train, viol_times)))
     
     return spike_train
+    
+
+def simulated_spike_amplitudes(num_spikes, mean_amplitude, amplitude_std):
+    """ Create spike amplitudes for testing amplitude cutoff
+
+    Has a Gaussian distribution, but may be truncated at the low end
+
+    Input:
+    ------
+    num_spikes : total_number of spikes
+    mean_amplitude : center of the amplitude histogram
+    amplitude_std : standard deviation of the amplitude histogram
+
+    Output:
+    -------
+    spike_amplitudes : array of amplitudes (arbitrary units)
+
+    """
+
+    np.random.seed(1)
+    r = norm.rvs(size=num_spikes, loc=mean_amplitude, scale=amplitude_std)
+    spike_amplitudes = np.delete(r, np.where(r < 0)[0])
+    
+    return spike_amplitudes
     

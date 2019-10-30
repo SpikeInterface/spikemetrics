@@ -553,11 +553,15 @@ def amplitude_cutoff(amplitudes, num_histogram_bins=500, histogram_smoothing_val
     ------
     amplitudes : numpy.ndarray
         Array of amplitudes (don't need to be in physical units)
+    num_histogram_bins : int
+        Number of bins for calculating amplitude histogram
+    histogram_smoothing_value : float
+        Gaussian filter window for smoothing amplitude histogram
 
     Output:
     -------
     fraction_missing : float
-        Fraction of missing spikes (0-0.5)
+        Fraction of missing spikes (ranges between 0 and 0.5)
         If more than 50% of spikes are missing, an accurate estimate isn't possible
 
     """
