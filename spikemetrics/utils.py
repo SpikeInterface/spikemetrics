@@ -373,9 +373,12 @@ def load_kilosort_data(folder,
         return spike_times, spike_clusters, spike_templates, amplitudes, unwhitened_temps, channel_map, cluster_ids, cluster_quality, pc_features, pc_feature_ind
 
 
-def get_spike_depths(spike_clusters, pc_features, pc_feature_ind):
+def get_spike_depths(spike_clusters, pc_features, pc_feature_ind, vertical_channel_spacing=10):
     """
     Calculates the distance (in microns) of individual spikes from the probe tip
+
+    Assumes a linear channel layout, and equal vertical spacing between channels;
+    for a Neuropixels probe, it does not account for the fact
 
     This implementation is based on Matlab code from github.com/cortex-lab/spikes
 
@@ -387,6 +390,8 @@ def get_spike_depths(spike_clusters, pc_features, pc_feature_ind):
         PC features for each spike
     pc_feature_ind  : numpy.ndarray (M x channels)
         Channels used for PC calculation for each unit
+    vertical_channel_spacing : float
+        Vertical channel spacing in microns (assumed to be equal for all channels)
 
     Output:
     ------
@@ -395,13 +400,13 @@ def get_spike_depths(spike_clusters, pc_features, pc_feature_ind):
 
     """
     pc_features_drift = np.copy(pc_features)
-    pc_features_drift = np.squeeze(pc_features_drift[:, 0, :])
+    pc_features_drift = pc_features_drift[:, 0, :]
     pc_features_drift[pc_features_drift < 0] = 0
     pc_power = pow(pc_features_drift, 2)
     spike_feat_ind = pc_feature_ind[spike_clusters, :]
-    spike_depths = np.sum(spike_feat_ind * pc_power) / np.sum(pc_power, 1)
+    spike_depths = np.sum(spike_feat_ind * pc_power, 1) / np.sum(pc_power, 1)
 
-    return spike_depths * 10
+    return spike_depths * vertical_channel_spacing
 
 
 def get_spike_amplitudes(spike_templates, templates, amplitudes):

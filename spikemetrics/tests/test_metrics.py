@@ -7,7 +7,9 @@ from spikemetrics import calculate_amplitude_cutoff, calculate_drift_metrics, ca
 
 from spikemetrics.metrics import isi_violations, firing_rate, presence_ratio, amplitude_cutoff
 
-from spikemetrics.tests.utils import simulated_spike_train, simulated_spike_amplitudes
+from spikemetrics.tests.utils import (simulated_spike_train, 
+                                      simulated_spike_amplitudes,
+                                      simulated_pcs_for_one_unit)
 
 @pytest.fixture
 def simulated_spikes():
@@ -45,11 +47,30 @@ def simulated_amplitudes():
     return {'spike_amplitudes' : spike_amplitudes, 'spike_clusters' : spike_clusters}
 
 
+@pytest.fixture
+def simulated_drift_pcs():
+
+    num_spikes = 5000
+
+    pc_features = [simulated_pcs_for_one_unit(num_spikes, 32, 5, end_channel) for end_channel in [5, 10, 15, 20]]
+
+    labels = [np.ones((pc_features[i].shape[0],), dtype='int') * i for i in range(len(pc_features))]
+    times = [np.linspace(0, 100, pc_features[i].shape[0],) for i in range(len(pc_features))]
+    
+    pc_feature_ind = np.tile(np.arange(32, dtype='int'), (len(pc_features),1))
+
+    pc_features = np.concatenate(pc_features, axis=0)
+    spike_clusters = np.concatenate(labels)
+    spike_times = np.concatenate(times)
+
+    return {'pc_features' : pc_features, 
+            'pc_feature_ind' : pc_feature_ind,
+            'spike_clusters' : spike_clusters,
+            'spike_times' : spike_times}
+
+
 def test_calculate_metrics():
     
-    pass
-
-def test_calculate_drift_metrics():
     pass
 
 
@@ -60,6 +81,18 @@ def test_calculate_pc_metrics():
 def test_calculate_silhouette_score():
     pass
 
+
+def test_calculate_drift_metrics(simulated_drift_pcs):
+
+    max_drift, cumulative_drift = calculate_drift_metrics(simulated_drift_pcs['spike_times'],
+                            simulated_drift_pcs['spike_clusters'],
+                            4,
+                            simulated_drift_pcs['pc_features'],
+                            simulated_drift_pcs['pc_feature_ind'],
+                            10,1,1)
+
+    assert np.allclose(max_drift, np.array([0, 4.5, 9, 13.5]))
+    assert np.allclose(cumulative_drift, np.array([0, 4.5, 9, 13.5]))
 
 
 def test_calculate_amplitude_cutoff(simulated_amplitudes):
@@ -91,7 +124,6 @@ def test_calculate_presence_ratio(simulated_spikes):
                                     verbose=False)
 
     assert np.allclose(ratios, np.array([1.0, 1.0, 1.0]))
-
 
 
 @pytest.mark.parametrize(

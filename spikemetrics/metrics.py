@@ -398,11 +398,15 @@ def calculate_drift_metrics(spike_times,
                             pc_feature_ind,
                             interval_length,
                             min_spikes_per_interval,
+                            vertical_channel_spacing=10,
                             verbose=True):
+
     max_drift = np.zeros((total_units,))
     cumulative_drift = np.zeros((total_units,))
 
-    depths = get_spike_depths(spike_clusters, pc_features, pc_feature_ind)
+    depths = get_spike_depths(spike_clusters, pc_features, pc_feature_ind, vertical_channel_spacing)
+
+    print(depths)
 
     interval_starts = np.arange(np.min(spike_times), np.max(spike_times), interval_length)
     interval_ends = interval_starts + interval_length
