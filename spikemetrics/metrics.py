@@ -490,7 +490,7 @@ def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=None)
     return fpRate, num_violations
 
 
-def presence_ratio(spike_train, min_time, max_time, num_bins=101):
+def presence_ratio(spike_train, min_time, max_time, num_bin_edges=101):
     """Calculate fraction of time the unit is present within an epoch.
 
     Inputs:
@@ -498,6 +498,8 @@ def presence_ratio(spike_train, min_time, max_time, num_bins=101):
     spike_train : array of spike times
     min_time : minimum time for potential spikes
     max_time : maximum time for potential spikes
+    num_bin_edges : number of bin edges for histogram
+      - total bins = num_bin_edges - 1
 
     Outputs:
     --------
@@ -505,9 +507,9 @@ def presence_ratio(spike_train, min_time, max_time, num_bins=101):
 
     """
 
-    h, b = np.histogram(spike_train, np.linspace(min_time, max_time, num_bins))
+    h, b = np.histogram(spike_train, np.linspace(min_time, max_time, num_bin_edges))
 
-    return np.sum(h > 0) / (num_bins - 1)
+    return np.sum(h > 0) / (num_bin_edges - 1)
 
 
 def firing_rate(spike_train, min_time=None, max_time=None):
