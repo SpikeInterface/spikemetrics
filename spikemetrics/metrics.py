@@ -490,7 +490,7 @@ def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=None)
     return fpRate, num_violations
 
 
-def presence_ratio(spike_train, min_time, max_time, num_bins=100):
+def presence_ratio(spike_train, min_time, max_time, num_bins=101):
     """Calculate fraction of time the unit is present within an epoch.
 
     Inputs:
