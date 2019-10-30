@@ -507,7 +507,7 @@ def presence_ratio(spike_train, min_time, max_time, num_bins=100):
 
     h, b = np.histogram(spike_train, np.linspace(min_time, max_time, num_bins))
 
-    return np.sum(h > 0) / num_bins
+    return np.sum(h > 0) / (num_bins - 1)
 
 
 def firing_rate(spike_train, min_time=None, max_time=None):
