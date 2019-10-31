@@ -96,15 +96,11 @@ def test_mahalanobis_metrics():
 
     all_pcs1, all_labels1 = create_ground_truth_pc_distributions([1,-1],[1000, 1000])
     all_pcs2, all_labels2 = create_ground_truth_pc_distributions([1,-2],[1000, 1000]) # increase distance between clusters
-    all_pcs3, all_labels3 = create_ground_truth_pc_distributions([1,-1],[1000, 100]) # decrease number of contaminating spikes
 
     isolation_distance1, l_ratio1 = mahalanobis_metrics(all_pcs1, all_labels1, 0)
     isolation_distance2, l_ratio2 = mahalanobis_metrics(all_pcs2, all_labels2, 0)
-    isolation_distance3, l_ratio3 = mahalanobis_metrics(all_pcs3, all_labels3, 0)
 
     assert isolation_distance1 < isolation_distance2
-    assert isolation_distance1 < isolation_distance3
-
     assert l_ratio1 > l_ratio2
 
 def test_lda_metrics():
@@ -120,8 +116,15 @@ def test_lda_metrics():
 
 def test_nearest_neighbors_metrics():
 
-    #hit_rate, miss_rate = nearest_neighbors_metrics(all_pcs, all_labels, 0, 1000, 3)
-    pass
+    all_pcs1, all_labels1 = create_ground_truth_pc_distributions([1,-1],[1000, 1000])
+    all_pcs2, all_labels2 = create_ground_truth_pc_distributions([1,-2],[1000, 1000]) # increase distance between clusters
+
+    hit_rate1, miss_rate1 = nearest_neighbors_metrics(all_pcs1, all_labels1, 0, 1000, 3)
+    hit_rate2, miss_rate2 = nearest_neighbors_metrics(all_pcs2, all_labels2, 0, 1000, 3)
+
+    assert hit_rate1 < hit_rate2
+    assert miss_rate1 > miss_rate2
+
 
 def test_calculate_silhouette_score():
     pass
