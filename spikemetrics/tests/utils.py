@@ -1,10 +1,38 @@
 import numpy as np
 
-from scipy.stats import norm
+from scipy.stats import norm, multivariate_normal
 
-def create_ground_truth_pc_distributions():
-    # HINT: start from Guassians in PC space and stereotyped waveforms and build dataset.
-    pass
+def create_ground_truth_pc_distributions(center_locations, total_points):
+    """ Simulate PCs as multivariate Gaussians, for testing PC-based quality metrics
+
+    Values are created for only one channel and vary along one dimension
+
+    Input:
+    ------
+    separation : distance between distribution means
+    total_points : array indicating number of points in each distribution
+
+    Output:
+    -------
+    all_pcs : N x 3 matrix of simulated PCs
+        N = np.sum(total_points)
+    all_labels : array of cluster IDs
+
+    """
+
+    distributions = [multivariate_normal.rvs(mean=[center, 0.0, 0.0],
+                                             cov=[1.0, 1.0, 1.0],
+                                             size=size,
+                                             seed=0) 
+                    for center, size in zip(center_locations, total_points)]
+
+    all_labels = np.concatenate([np.ones((distributions[i].shape[0],))*i  for i in range(len(distributions))])
+
+    all_pcs = np.concatenate(distributions, axis=0)
+
+    return all_pcs, all_labels
+    
+
 
 def simulated_pcs_for_one_spike(total_channels, peak_channel):
     """ Simulate the top principal components across channels for one spike

@@ -1,18 +1,33 @@
 import numpy as np
 import pytest
 
-from spikemetrics import calculate_amplitude_cutoff, calculate_drift_metrics, calculate_firing_rate_and_spikes, \
-    calculate_isi_violations, calculate_pc_metrics, calculate_silhouette_score, calculate_presence_ratio, \
-    calculate_metrics
+from spikemetrics import (calculate_amplitude_cutoff, 
+                          calculate_drift_metrics, 
+                          calculate_firing_rate_and_spikes, 
+                          calculate_isi_violations, 
+                          calculate_pc_metrics, 
+                          calculate_silhouette_score, 
+                          calculate_presence_ratio, 
+                          calculate_metrics)
 
-from spikemetrics.metrics import isi_violations, firing_rate, presence_ratio, amplitude_cutoff
+from spikemetrics.metrics import (isi_violations, 
+                                  firing_rate, 
+                                  presence_ratio, 
+                                  amplitude_cutoff,
+                                  mahalanobis_metrics,
+                                  lda_metrics,
+                                  nearest_neighbors_metrics,
+                                  make_index_mask,
+                                  make_channel_mask,
+                                  get_unit_pcs)
 
 from spikemetrics.tests.utils import (simulated_spike_train, 
                                       simulated_spike_amplitudes,
-                                      simulated_pcs_for_one_unit)
+                                      simulated_pcs_for_one_unit,
+                                      create_ground_truth_pc_distributions)
 
 @pytest.fixture
-def simulated_spikes():
+def simulated_spike_times():
 
     max_time = 100
 
@@ -77,9 +92,93 @@ def test_calculate_metrics():
 def test_calculate_pc_metrics():
     pass
 
+def test_mahalanobis_metrics():
+
+    all_pcs1, all_labels1 = create_ground_truth_pc_distributions([1,-1],[1000, 1000])
+    all_pcs2, all_labels2 = create_ground_truth_pc_distributions([1,-2],[1000, 1000]) # increase distance between clusters
+    all_pcs3, all_labels3 = create_ground_truth_pc_distributions([1,-1],[1000, 100]) # decrease number of contaminating spikes
+
+    isolation_distance1, l_ratio1 = mahalanobis_metrics(all_pcs1, all_labels1, 0)
+    isolation_distance2, l_ratio2 = mahalanobis_metrics(all_pcs2, all_labels2, 0)
+    isolation_distance3, l_ratio3 = mahalanobis_metrics(all_pcs3, all_labels3, 0)
+
+    assert isolation_distance1 < isolation_distance2
+    assert isolation_distance1 < isolation_distance3
+
+    assert l_ratio1 > l_ratio2
+
+def test_lda_metrics():
+
+    all_pcs1, all_labels1 = create_ground_truth_pc_distributions([1,-1],[1000, 1000])
+    all_pcs2, all_labels2 = create_ground_truth_pc_distributions([1,-2],[1000, 1000]) # increase distance between clusters
+
+    d_prime1 = lda_metrics(all_pcs1, all_labels1, 0)
+    d_prime2 = lda_metrics(all_pcs2, all_labels2, 0)
+
+    assert d_prime1 < d_prime2
+
+
+def test_nearest_neighbors_metrics():
+
+    #hit_rate, miss_rate = nearest_neighbors_metrics(all_pcs, all_labels, 0, 1000, 3)
+    pass
 
 def test_calculate_silhouette_score():
     pass
+
+@pytest.mark.parametrize(
+    "num_total_spikes,num_selected_spikes",
+    [
+        [100, 0], [500, 500], [1000, 500]
+    ],
+)
+def test_make_index_mask(num_total_spikes, num_selected_spikes):
+
+    spike_clusters = np.ones((num_total_spikes,), dtype='int')
+    unit_id = 1
+
+    index_mask = make_index_mask(spike_clusters, unit_id, 200, 500, seed=0)
+
+    assert np.sum(index_mask) == num_selected_spikes
+                                  
+
+def test_make_channel_mask():
+
+    pc_feature_ind = np.tile(np.arange(32), (4, 1))
+    pc_feature_ind[0,:] = pc_feature_ind[0,np.random.permutation(32)]
+    unit_id = 0
+    channels_to_use = np.arange(10)
+
+    channel_mask = make_channel_mask(unit_id, pc_feature_ind, channels_to_use)
+
+    sorted_channel_mask = np.sort(channel_mask)
+    expected_result = np.where(np.isin(pc_feature_ind[unit_id,:], channels_to_use))[0]
+ 
+    assert np.array_equal(sorted_channel_mask, expected_result)
+
+def test_get_unit_pcs():
+
+    original_spike_count = 1000
+    masked_spike_count = 100
+
+    original_channel_count = 32
+    masked_channel_count = 10
+
+    num_pc_features = 3
+
+    these_pc_features = np.ones((original_spike_count, num_pc_features, original_channel_count))
+    
+    channel_mask = np.arange(masked_channel_count)
+    index_mask = np.zeros((original_spike_count,), dtype='bool')
+    index_mask[:masked_spike_count] = True
+
+    unit_PCs = get_unit_pcs(these_pc_features, index_mask, channel_mask)
+
+    assert unit_PCs.shape == (masked_spike_count, num_pc_features, masked_channel_count)
+
+
+
+
 
 
 def test_calculate_drift_metrics(simulated_drift_pcs):
@@ -116,10 +215,10 @@ def test_amplitude_cutoff():
 
 
 
-def test_calculate_presence_ratio(simulated_spikes):
+def test_calculate_presence_ratio(simulated_spike_times):
 
-    ratios = calculate_presence_ratio(simulated_spikes['spike_times'], 
-                                    simulated_spikes['spike_clusters'], 
+    ratios = calculate_presence_ratio(simulated_spike_times['spike_times'], 
+                                    simulated_spike_times['spike_clusters'], 
                                     3,
                                     verbose=False)
 
@@ -141,10 +240,10 @@ def test_presence_ratio(overall_duration, expected_value):
 
 
 
-def test_calculate_isi_violations(simulated_spikes):
+def test_calculate_isi_violations(simulated_spike_times):
 
-    viol = calculate_isi_violations(simulated_spikes['spike_times'], 
-                                    simulated_spikes['spike_clusters'], 
+    viol = calculate_isi_violations(simulated_spike_times['spike_times'], 
+                                    simulated_spike_times['spike_clusters'], 
                                     3, 0.001, 0.0, verbose=False)
 
     assert np.allclose(viol, np.array([0.0995016 , 0.78656463, 1.92041522]))
@@ -193,10 +292,10 @@ def test_isi_violations():
 
 
 
-def test_calculate_firing_rate_and_spikes(simulated_spikes):
+def test_calculate_firing_rate_and_spikes(simulated_spike_times):
 
-    firing_rates, spike_counts = calculate_firing_rate_and_spikes(simulated_spikes['spike_times'], 
-                                    simulated_spikes['spike_clusters'], 
+    firing_rates, spike_counts = calculate_firing_rate_and_spikes(simulated_spike_times['spike_times'], 
+                                    simulated_spike_times['spike_clusters'], 
                                     3, verbose=False)
 
     print(firing_rates)

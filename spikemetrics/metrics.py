@@ -231,6 +231,7 @@ def calculate_pc_metrics(spike_clusters,
                          max_spikes_for_cluster,
                          spikes_for_nn,
                          n_neighbors,
+                         min_num_pcs=10,
                          metric_names=None,
                          seed=0, verbose=True):
     assert (num_channels_to_compare % 2 == 1)
@@ -313,7 +314,7 @@ def calculate_pc_metrics(spike_clusters,
 
         all_pcs = np.reshape(all_pcs, (all_pcs.shape[0], pc_features.shape[1] * channels_to_use.size))
 
-        if all_pcs.shape[0] > 10:
+        if all_pcs.shape[0] > min_num_pcs:
 
             if 'isolation_distance' in metric_names or 'l_ratio' in metric_names:
                 isolation_distances[cluster_id], l_ratios[cluster_id] = mahalanobis_metrics(all_pcs, all_labels,
