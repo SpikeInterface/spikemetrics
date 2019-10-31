@@ -381,7 +381,7 @@ def calculate_silhouette_score(spike_clusters,
 
         for idx2, j in enumerate(cluster_ids):
 
-            if j > i:
+            if j != i:
                 inds = np.in1d(cluster_labels, np.array([i, j]))
                 X = all_pcs[inds, :]
                 labels = cluster_labels[inds]

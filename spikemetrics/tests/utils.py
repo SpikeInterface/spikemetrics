@@ -27,7 +27,7 @@ def create_ground_truth_pc_distributions(center_locations, total_points):
                                              size=size) 
                     for center, size in zip(center_locations, total_points)]
 
-    all_labels = np.concatenate([np.ones((distributions[i].shape[0],))*i  for i in range(len(distributions))])
+    all_labels = np.concatenate([np.ones((distributions[i].shape[0],),dtype='int')*i  for i in range(len(distributions))])
 
     all_pcs = np.concatenate(distributions, axis=0)
 

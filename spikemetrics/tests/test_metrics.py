@@ -88,9 +88,47 @@ def test_calculate_metrics():
     
     pass
 
+def test_calculate_silhouette_score():
+
+    pc_features, spike_clusters = create_ground_truth_pc_distributions([1,-1, 10, 20],[1000, 1000, 500, 20])
+    pc_feature_ind = np.zeros((4,1),dtype='int')
+    total_units = 4
+    pc_features = np.expand_dims(pc_features, axis=2)
+
+    ss = calculate_silhouette_score(spike_clusters,
+                               total_units,
+                               pc_features,
+                               pc_feature_ind,
+                               1000,
+                               verbose=False)
+
+    assert np.sum(np.isnan(ss)) == 0
+
 
 def test_calculate_pc_metrics():
-    pass
+
+    pc_features, spike_clusters = create_ground_truth_pc_distributions([1,-1, 10, 20],[1000, 1000, 500, 20])
+    pc_feature_ind = np.zeros((4,1),dtype='int')
+    total_units = 4
+    pc_features = np.expand_dims(pc_features, axis=2)
+
+    isolation_distances, l_ratios, d_primes, nn_hit_rates, nn_miss_rates = \
+            calculate_pc_metrics(spike_clusters,
+                         total_units,
+                         pc_features,
+                         pc_feature_ind,
+                         1,
+                         500,
+                         1000,
+                         3,
+                         verbose=False)
+
+    assert np.sum(np.isnan(isolation_distances)) == 0
+    assert np.sum(np.isnan(l_ratios)) == 0
+    assert np.sum(np.isnan(d_primes)) == 0
+    assert np.sum(np.isnan(nn_hit_rates)) == 0
+    assert np.sum(np.isnan(nn_miss_rates)) == 0
+    
 
 def test_mahalanobis_metrics():
 
@@ -126,8 +164,7 @@ def test_nearest_neighbors_metrics():
     assert miss_rate1 > miss_rate2
 
 
-def test_calculate_silhouette_score():
-    pass
+
 
 @pytest.mark.parametrize(
     "num_total_spikes,num_selected_spikes",
