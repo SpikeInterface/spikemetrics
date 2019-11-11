@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 import math
+import warnings
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.neighbors import NearestNeighbors
@@ -231,6 +232,7 @@ def calculate_pc_metrics(spike_clusters,
                          max_spikes_for_cluster,
                          spikes_for_nn,
                          n_neighbors,
+                         min_num_pcs=10,
                          metric_names=None,
                          seed=0, verbose=True):
     assert (num_channels_to_compare % 2 == 1)
@@ -313,7 +315,7 @@ def calculate_pc_metrics(spike_clusters,
 
         all_pcs = np.reshape(all_pcs, (all_pcs.shape[0], pc_features.shape[1] * channels_to_use.size))
 
-        if all_pcs.shape[0] > 10:
+        if all_pcs.shape[0] > min_num_pcs:
 
             if 'isolation_distance' in metric_names or 'l_ratio' in metric_names:
                 isolation_distances[cluster_id], l_ratios[cluster_id] = mahalanobis_metrics(all_pcs, all_labels,
@@ -388,7 +390,12 @@ def calculate_silhouette_score(spike_clusters,
                 if len(labels) > 2:
                     SS[i, j] = silhouette_score(X, labels)
 
-    return np.nanmin(SS, 0)
+    with warnings.catch_warnings():
+      warnings.simplefilter("ignore")
+      a = np.nanmin(SS, 0)
+      b = np.nanmin(SS, 1)
+
+    return np.array([np.nanmin([a,b]) for a, b in zip(a,b)])
 
 
 def calculate_drift_metrics(spike_times,
@@ -398,11 +405,15 @@ def calculate_drift_metrics(spike_times,
                             pc_feature_ind,
                             interval_length,
                             min_spikes_per_interval,
+                            vertical_channel_spacing=10,
                             verbose=True):
+
     max_drift = np.zeros((total_units,))
     cumulative_drift = np.zeros((total_units,))
 
-    depths = get_spike_depths(spike_clusters, pc_features, pc_feature_ind)
+    depths = get_spike_depths(spike_clusters, pc_features, pc_feature_ind, vertical_channel_spacing)
+
+    print(depths)
 
     interval_starts = np.arange(np.min(spike_times), np.max(spike_times), interval_length)
     interval_ends = interval_starts + interval_length
@@ -444,36 +455,42 @@ def calculate_drift_metrics(spike_times,
 # ==========================================================
 
 
-def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=0):
-    """Calculate ISI violations for a spike train.
+def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=None):
+    """Calculate Inter-Spike Interval (ISI) violations for a spike train.
 
     Based on metric described in Hill et al. (2011) J Neurosci 31: 8699-8705
 
-    modified by Dan Denman from cortex-lab/sortingQuality GitHub by Nick Steinmetz
+    Originally written in Matlab by Nick Steinmetz (https://github.com/cortex-lab/sortingQuality)
+    Converted to Python by Daniel Denman
 
     Inputs:
     -------
-    spike_train : array of spike times
-    min_time : minimum time for potential spikes
-    max_time : maximum time for potential spikes
-    isi_threshold : threshold for isi violation
-    min_isi : threshold for duplicate spikes
+    spike_train : array of monotonically increasing spike times (in seconds) [t1, t2, t3, ...]
+    min_time : start of recording (in seconds)
+    max_time : end of recording (in seconds)
+    isi_threshold : threshold for classifying adjacent spikes as an ISI violation
+      - this is the biophysical refractory period
+    min_isi : minimum possible inter-spike interval (default = None)
+      - this is the artificial refractory period enforced by the data acquisition system
+        or post-processing algorithms
+      - if set to None, all spikes will be included
 
     Outputs:
     --------
     fpRate : rate of contaminating spikes as a fraction of overall rate
-        A perfect unit has a fpRate = 0
-        A unit with some contamination has a fpRate < 0.5
-        A unit with lots of contamination has a fpRate > 1.0
-    num_violations : total number of violations
+      - higher values indicate more contamination
+    num_violations : total number of violations detected
 
     """
 
-    duplicate_spikes = np.where(np.diff(spike_train) <= min_isi)[0]
-
-    spike_train = np.delete(spike_train, duplicate_spikes + 1)
     isis = np.diff(spike_train)
 
+    if min_isi is not None:
+        duplicate_spikes = np.where(isis <= min_isi)[0]
+        spike_train = np.delete(spike_train, duplicate_spikes + 1)
+    else:
+        min_isi = 0
+    
     num_spikes = len(spike_train)
     num_violations = sum(isis < isi_threshold)
     violation_time = 2 * num_spikes * (isi_threshold - min_isi)
@@ -484,7 +501,7 @@ def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=0):
     return fpRate, num_violations
 
 
-def presence_ratio(spike_train, min_time, max_time, num_bins=100):
+def presence_ratio(spike_train, min_time, max_time, num_bin_edges=101):
     """Calculate fraction of time the unit is present within an epoch.
 
     Inputs:
@@ -492,6 +509,8 @@ def presence_ratio(spike_train, min_time, max_time, num_bins=100):
     spike_train : array of spike times
     min_time : minimum time for potential spikes
     max_time : maximum time for potential spikes
+    num_bin_edges : number of bin edges for histogram
+      - total bins = num_bin_edges - 1
 
     Outputs:
     --------
@@ -499,24 +518,21 @@ def presence_ratio(spike_train, min_time, max_time, num_bins=100):
 
     """
 
-    h, b = np.histogram(spike_train, np.linspace(min_time, max_time, num_bins))
+    h, b = np.histogram(spike_train, np.linspace(min_time, max_time, num_bin_edges))
 
-    return np.sum(h > 0) / num_bins
+    return np.sum(h > 0) / (num_bin_edges - 1)
 
 
 def firing_rate(spike_train, min_time=None, max_time=None):
     """Calculate firing rate for a spike train.
 
-    If no temporal bounds are specified, the first and last spike time are used.
+    If either temporal bound is not specified, the first and last spike time are used by default.
 
     Inputs:
     -------
-    spike_train : numpy.ndarray
-        Array of spike times in seconds
-    min_time : float
-        Time of first possible spike (optional)
-    max_time : float
-        Time of last possible spike (optional)
+    spike_train : array of spike times (in seconds)
+    min_time : time of first possible spike (optional)
+    max_time : time of last possible spike (optional)
 
     Outputs:
     --------
@@ -525,11 +541,13 @@ def firing_rate(spike_train, min_time=None, max_time=None):
 
     """
 
-    if min_time is not None and max_time is not None:
-        duration = max_time - min_time
-    else:
-        duration = np.max(spike_train) - np.min(spike_train)
+    if min_time is None:
+        min_time = np.min(spike_train) 
 
+    if max_time is None:
+        max_time = np.max(spike_train)
+
+    duration = max_time - min_time
     fr = spike_train.size / duration
 
     return fr
@@ -546,11 +564,15 @@ def amplitude_cutoff(amplitudes, num_histogram_bins=500, histogram_smoothing_val
     ------
     amplitudes : numpy.ndarray
         Array of amplitudes (don't need to be in physical units)
+    num_histogram_bins : int
+        Number of bins for calculating amplitude histogram
+    histogram_smoothing_value : float
+        Gaussian filter window for smoothing amplitude histogram
 
     Output:
     -------
     fraction_missing : float
-        Fraction of missing spikes (0-0.5)
+        Fraction of missing spikes (ranges between 0 and 0.5)
         If more than 50% of spikes are missing, an accurate estimate isn't possible
 
     """
