@@ -3,7 +3,7 @@ Computes quality metrics for sorted units. This module can calculate metrics sep
 
 The base code (and portions of the README images/description) was ported from: https://github.com/AllenInstitute/ecephys_spike_sorting/tree/master/ecephys_spike_sorting/modules/quality_metrics
 
-Copyright © 2019. Allen Institute.  All rights reserved.
+Copyright 2019. Allen Institute.  All rights reserved.
 
 ## Included Metrics
 
