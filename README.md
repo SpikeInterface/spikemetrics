@@ -14,7 +14,7 @@ Copyright © 2019. Allen Institute.  All rights reserved.
 | Presence ratio     |                          | Fraction of epoch in which spikes are present      |                  |
 | ISI violations     |![](images/isi_viol.png)  | Rate of refractory-period violations               |                  |
 | Isolation distance |![](images/isol_dist.png) | The Mahalanobis distance from a specified unit within as many spikes belong to the specified unit as to other units   | Harris et al. Neuron 32.1 (2001): 141-149. |
-| L-ratio            |                          | The Mahalanobis distance and χ2 inverse cdf (given the assumption that the spikes in the cluster distribute normally in each dimension) are used to find the probability of cluster membership for each spike. |        Schmitzer-Torbert and Redish. _J Neurophy_  91.5 (2004): 2259-2272.         |
+| L-ratio            |                          | The Mahalanobis distance and chi-squared inverse cdf (given the assumption that the spikes in the cluster distribute normally in each dimension) are used to find the probability of cluster membership for each spike. |        Schmitzer-Torbert and Redish. _J Neurophy_  91.5 (2004): 2259-2272.         |
 | _d'_               |![](images/d_prime.png)   | The classification accuracy between units based on linear discriminant analysis (LDA).               | Hill et al. (2011) _J Neurosci_ **31**, 8699-9705 |
 | Nearest-neighbors  |![](images/nn_overlap.png)| Non-parametric estimate of unit contamination using nearest-neighbor classification.      | Chung et al. (2017) _Neuron_ **95**, 1381-1394 |
 | Silhouette score  |                           | A standard metric for quantifying cluster overlap      |         |
