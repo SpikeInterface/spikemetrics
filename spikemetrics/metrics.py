@@ -19,7 +19,7 @@ from .utils import printProgressBar, get_spike_depths
 
 
 def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_feature_ind, params,
-                      cluster_ids=None, epochs=None, seed=0, verbose=True):
+                      cluster_ids=None, epochs=None, seed=None, verbose=True):
     """ Calculate metrics for all units on one probe
 
     Inputs:
@@ -234,7 +234,7 @@ def calculate_pc_metrics(spike_clusters,
                          n_neighbors,
                          min_num_pcs=10,
                          metric_names=None,
-                         seed=0, verbose=True):
+                         seed=None, verbose=True):
     assert (num_channels_to_compare % 2 == 1)
     half_spread = int((num_channels_to_compare - 1) / 2)
 
@@ -353,7 +353,7 @@ def calculate_silhouette_score(spike_clusters,
                                pc_features,
                                pc_feature_ind,
                                spikes_for_silhouette,
-                               seed=0, verbose=True):
+                               seed=None, verbose=True):
     random_spike_inds = np.random.RandomState(seed=seed).permutation(spike_clusters.size)
     random_spike_inds = random_spike_inds[:spikes_for_silhouette]
     num_pc_features = pc_features.shape[1]
@@ -747,7 +747,7 @@ def nearest_neighbors_metrics(all_pcs, all_labels, this_unit_id, spikes_for_nn, 
 
 # ==========================================================
 
-def make_index_mask(spike_clusters, unit_id, min_num, max_num, seed=0):
+def make_index_mask(spike_clusters, unit_id, min_num, max_num, seed=None):
     """ Create a mask for the spike index dimensions of the pc_features array
 
     Inputs:
@@ -760,6 +760,8 @@ def make_index_mask(spike_clusters, unit_id, min_num, max_num, seed=0):
         Minimum number of spikes to return; if there are not enough spikes for this unit, return all False
     max_num : Int
         Maximum number of spikes to return; if too many spikes for this unit, return a random subsample
+    seed: int
+        Random seed for reproducibility
 
     Output:
     -------
