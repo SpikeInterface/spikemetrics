@@ -412,9 +412,6 @@ def calculate_drift_metrics(spike_times,
     cumulative_drift = np.zeros((total_units,))
 
     depths = get_spike_depths(spike_clusters, pc_features, pc_feature_ind, vertical_channel_spacing)
-
-    print(depths)
-
     interval_starts = np.arange(np.min(spike_times), np.max(spike_times), interval_length)
     interval_ends = interval_starts + interval_length
 
@@ -490,7 +487,7 @@ def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=None)
         spike_train = np.delete(spike_train, duplicate_spikes + 1)
     else:
         min_isi = 0
-    
+
     num_spikes = len(spike_train)
     num_violations = sum(isis < isi_threshold)
     violation_time = 2 * num_spikes * (isi_threshold - min_isi)
@@ -542,7 +539,7 @@ def firing_rate(spike_train, min_time=None, max_time=None):
     """
 
     if min_time is None:
-        min_time = np.min(spike_train) 
+        min_time = np.min(spike_train)
 
     if max_time is None:
         max_time = np.max(spike_train)
@@ -799,7 +796,7 @@ def make_channel_mask(unit_id, pc_feature_ind, channels_to_use):
     -------
     channel_mask : numpy.ndarray
         Channel indices to extract from pc_features array
-    
+
     """
 
     these_inds = pc_feature_ind[unit_id, :]
