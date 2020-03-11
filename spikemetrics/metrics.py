@@ -62,7 +62,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
     total_epochs = len(epochs)
 
     for epoch in epochs:
-        in_epoch = np.logical_and(spike_times > epoch.start_time, spike_times < epoch.end_time)
+        in_epoch = np.logical_and(spike_times >= epoch.start_time, spike_times < epoch.end_time)
         spikes_in_epoch = np.sum(in_epoch)
         spikes_for_nn = min(spikes_in_epoch, params['max_spikes_for_nn'])
         spikes_for_silhouette = min(spikes_in_epoch, params['n_silhouette'])
