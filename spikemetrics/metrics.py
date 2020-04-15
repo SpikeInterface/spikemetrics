@@ -479,8 +479,10 @@ def isi_violations(spike_train, min_time, max_time, isi_threshold, min_isi=None)
     num_violations : total number of violations detected
 
     """
+    isis_initial = np.diff(spike_train)
+
     if min_isi is not None:
-        duplicate_spikes = np.where(isis <= min_isi)[0]
+        duplicate_spikes = np.where(isis_initial <= min_isi)[0]
         spike_train = np.delete(spike_train, duplicate_spikes + 1)
     else:
         min_isi = 0
