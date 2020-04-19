@@ -19,7 +19,7 @@ from .utils import printProgressBar, get_spike_depths
 
 
 def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_feature_ind, params,
-                      cluster_ids=None, epochs=None, seed=None, verbose=True):
+                      duration, cluster_ids=None, epochs=None, seed=None, verbose=True):
     """ Calculate metrics for all units on one probe
 
     Inputs:
@@ -34,6 +34,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
         Channel indices of PCs for each unit
     epochs : list of Epoch objects
         contains information on Epoch start and stop times
+    duration : length of recording (seconds)
     params : dict of parameters
         'isi_threshold' : minimum time for isi violations
         'min_isi'
@@ -69,15 +70,15 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
 
         print("Calculating isi violations")
         isi_viol = calculate_isi_violations(spike_times[in_epoch], spike_clusters[in_epoch], total_units,
-                                            params['isi_threshold'], params['min_isi'], verbose=verbose)
+                                            duration, params['isi_threshold'], params['min_isi'], verbose=verbose)
 
         print("Calculating presence ratio")
         presence_ratio = calculate_presence_ratio(spike_times[in_epoch], spike_clusters[in_epoch], total_units,
-                                                  verbose=verbose)
+                                                  duration, verbose=verbose)
 
         print("Calculating firing rate")
         firing_rate, num_spikes = calculate_firing_rate_and_spikes(spike_times[in_epoch], spike_clusters[in_epoch],
-                                                                   total_units, verbose=verbose)
+                                                                   duration, total_units, verbose=verbose)
 
         print("Calculating amplitude cutoff")
         amplitude_cutoff = calculate_amplitude_cutoff(spike_clusters[in_epoch], amplitudes[in_epoch], total_units,
