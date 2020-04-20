@@ -77,8 +77,8 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
                                                   duration, verbose=verbose)
 
         print("Calculating firing rate")
-        firing_rate, num_spikes = calculate_firing_rate_and_spikes(spike_times[in_epoch], spike_clusters[in_epoch],
-                                                                   duration, total_units, verbose=verbose)
+        firing_rate = calculate_firing_rates(spike_times[in_epoch], spike_clusters[in_epoch],
+                                             duration, total_units, verbose=verbose)
 
         print("Calculating amplitude cutoff")
         amplitude_cutoff = calculate_amplitude_cutoff(spike_clusters[in_epoch], amplitudes[in_epoch], total_units,
@@ -123,7 +123,6 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
         epoch_name = [epoch.name] * len(cluster_ids_out)
 
         metrics = pd.concat((metrics, pd.DataFrame(data=OrderedDict((('cluster_id', cluster_ids_out),
-                                                                     ('num_spikes', num_spikes),
                                                                      ('firing_rate', firing_rate),
                                                                      ('presence_ratio', presence_ratio),
                                                                      ('isi_viol', isi_viol),
@@ -184,11 +183,9 @@ def calculate_presence_ratio(spike_times, spike_clusters, total_units, duration,
     return ratios
 
 
-def calculate_firing_rate_and_spikes(spike_times, spike_clusters, total_units, duration, verbose=True):
+def calculate_firing_rates(spike_times, spike_clusters, total_units, duration, verbose=True):
     cluster_ids = np.unique(spike_clusters)
-
     firing_rates = np.zeros((total_units,))
-    num_spikes = np.zeros((total_units,))
 
     for idx, cluster_id in enumerate(cluster_ids):
 
@@ -198,9 +195,8 @@ def calculate_firing_rate_and_spikes(spike_times, spike_clusters, total_units, d
         for_this_cluster = (spike_clusters == cluster_id)
         firing_rates[cluster_id] = firing_rate(spike_times[for_this_cluster],
                                                duration=duration)
-        num_spikes[cluster_id] = len(spike_times[for_this_cluster])
 
-    return firing_rates, num_spikes
+    return firing_rates
 
 
 def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units, verbose=True):

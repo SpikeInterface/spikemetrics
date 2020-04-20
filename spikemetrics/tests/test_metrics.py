@@ -3,7 +3,7 @@ import pytest
 
 from spikemetrics import (calculate_amplitude_cutoff, 
                           calculate_drift_metrics, 
-                          calculate_firing_rate_and_spikes, 
+                          calculate_firing_rates, 
                           calculate_isi_violations, 
                           calculate_pc_metrics, 
                           calculate_silhouette_score, 
@@ -332,13 +332,12 @@ def test_isi_violations():
 
 
 
-def test_calculate_firing_rate_and_spikes(simulated_spike_times):
+def test_calculate_firing_rate(simulated_spike_times):
 
-    firing_rates, spike_counts = calculate_firing_rate_and_spikes(simulated_spike_times['spike_times'], 
-                                    simulated_spike_times['spike_clusters'], 
-                                    3, duration=simulated_spike_times['spike_times'][-1], verbose=False)
+    firing_rates = calculate_firing_rates(simulated_spike_times['spike_times'], 
+                                                        simulated_spike_times['spike_clusters'], 
+                                                        3, duration=simulated_spike_times['spike_times'][-1], verbose=False)
     assert np.allclose(firing_rates, np.array([10.02,   5.04,  5.1]))
-    assert np.allclose(spike_counts, np.array([1002, 504, 510]))
 
 
 def test_firing_rate():
