@@ -183,6 +183,22 @@ def calculate_presence_ratio(spike_times, spike_clusters, total_units, duration,
     return ratios
 
 
+
+def calculate_num_spikes(spike_times, spike_clusters, total_units, verbose=True):
+    cluster_ids = np.unique(spike_clusters)
+    num_spikes = np.zeros((total_units,))
+
+    for idx, cluster_id in enumerate(cluster_ids):
+
+        if verbose:
+            printProgressBar(cluster_id + 1, total_units)
+
+        for_this_cluster = (spike_clusters == cluster_id)
+        num_spikes[cluster_id] = len(spike_times[for_this_cluster])
+
+    return num_spikes
+
+
 def calculate_firing_rates(spike_times, spike_clusters, total_units, duration, verbose=True):
     cluster_ids = np.unique(spike_clusters)
     firing_rates = np.zeros((total_units,))
