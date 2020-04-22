@@ -125,7 +125,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
         metrics = pd.concat((metrics, pd.DataFrame(data=OrderedDict((('cluster_id', cluster_ids_out),
                                                                      ('firing_rate', firing_rate),
                                                                      ('presence_ratio', presence_ratio),
-                                                                     ('isi_viol', isi_viol),
+                                                                     ('isi_violation', isi_viol),
                                                                      ('amplitude_cutoff', amplitude_cutoff),
                                                                      ('isolation_distance', isolation_distance),
                                                                      ('l_ratio', l_ratio),
