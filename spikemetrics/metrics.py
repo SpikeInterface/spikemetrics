@@ -460,7 +460,7 @@ def calculate_drift_metrics(spike_times,
 # ==========================================================
 
 
-def isi_violations(spike_train, duration, isi_threshold, min_isi=None):
+def isi_violations(spike_train, duration, isi_threshold, min_isi=0):
     """Calculate Inter-Spike Interval (ISI) violations for a spike train.
 
     Based on metric described in Hill et al. (2011) J Neurosci 31: 8699-8705
@@ -474,10 +474,9 @@ def isi_violations(spike_train, duration, isi_threshold, min_isi=None):
     duration : length of recording (seconds)
     isi_threshold : threshold for classifying adjacent spikes as an ISI violation
       - this is the biophysical refractory period
-    min_isi : minimum possible inter-spike interval (default = None)
+    min_isi : minimum possible inter-spike interval (default = 0)
       - this is the artificial refractory period enforced by the data acquisition system
         or post-processing algorithms
-      - if set to None, all spikes will be included
 
     Outputs:
     --------
@@ -488,11 +487,9 @@ def isi_violations(spike_train, duration, isi_threshold, min_isi=None):
     """
     isis_initial = np.diff(spike_train)
 
-    if min_isi is not None:
+    if min_isi > 0:
         duplicate_spikes = np.where(isis_initial <= min_isi)[0]
         spike_train = np.delete(spike_train, duplicate_spikes + 1)
-    else:
-        min_isi = 0
 
     isis = np.diff(spike_train)
     num_spikes = len(spike_train)
