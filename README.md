@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/SpikeInterface/spikemetrics.svg?branch=master)](https://travis-ci.com/SpikeInterface/spikemetrics) [![PyPI version](https://badge.fury.io/py/spikemetrics.svg)](https://badge.fury.io/py/spikemetrics)
+
 # SpikeMetrics
 Computes quality metrics for sorted units. This module can calculate metrics separately for individual epochs. If no epochs are specified, metrics are computed for the entire recording.
 
