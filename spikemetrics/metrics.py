@@ -147,8 +147,11 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
 
 # ===============================================================
 
-def calculate_isi_violations(spike_times, spike_clusters, total_units, isi_threshold, min_isi, duration, verbose=True):
-    cluster_ids = np.unique(spike_clusters)
+def calculate_isi_violations(spike_times, spike_clusters, total_units, isi_threshold, min_isi, duration, spike_cluster_subset=None,  verbose=True):
+    if spike_cluster_subset is not None:
+        cluster_ids = spike_cluster_subset
+    else: 
+        cluster_ids = np.unique(spike_clusters)
 
     viol_rates = np.zeros((total_units,))
 
@@ -166,8 +169,11 @@ def calculate_isi_violations(spike_times, spike_clusters, total_units, isi_thres
     return viol_rates
 
 
-def calculate_presence_ratio(spike_times, spike_clusters, total_units, duration, verbose=True):
-    cluster_ids = np.unique(spike_clusters)
+def calculate_presence_ratio(spike_times, spike_clusters, total_units, duration, spike_cluster_subset=None, verbose=True):
+    if spike_cluster_subset is not None:
+        cluster_ids = spike_cluster_subset
+    else: 
+        cluster_ids = np.unique(spike_clusters)
 
     ratios = np.zeros((total_units,))
 
@@ -184,9 +190,12 @@ def calculate_presence_ratio(spike_times, spike_clusters, total_units, duration,
 
 
 
-def calculate_num_spikes(spike_times, spike_clusters, total_units, verbose=True):
-    cluster_ids = np.unique(spike_clusters)
+def calculate_num_spikes(spike_times, spike_clusters, total_units, spike_cluster_subset=None, verbose=True):
     num_spikes = np.zeros((total_units,))
+    if spike_cluster_subset is not None:
+        cluster_ids = spike_cluster_subset
+    else: 
+        cluster_ids = np.unique(spike_clusters)
 
     for idx, cluster_id in enumerate(cluster_ids):
 
@@ -199,8 +208,12 @@ def calculate_num_spikes(spike_times, spike_clusters, total_units, verbose=True)
     return num_spikes
 
 
-def calculate_firing_rates(spike_times, spike_clusters, total_units, duration, verbose=True):
-    cluster_ids = np.unique(spike_clusters)
+def calculate_firing_rates(spike_times, spike_clusters, total_units, duration, spike_cluster_subset=None, verbose=True):
+    if spike_cluster_subset is not None:
+        cluster_ids = spike_cluster_subset
+    else: 
+        cluster_ids = np.unique(spike_clusters)
+    
     firing_rates = np.zeros((total_units,))
 
     for idx, cluster_id in enumerate(cluster_ids):
@@ -215,8 +228,11 @@ def calculate_firing_rates(spike_times, spike_clusters, total_units, duration, v
     return firing_rates
 
 
-def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units, verbose=True):
-    cluster_ids = np.unique(spike_clusters)
+def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units, spike_cluster_subset=None,  verbose=True):
+    if spike_cluster_subset is not None:
+        cluster_ids = spike_cluster_subset
+    else: 
+        cluster_ids = np.unique(spike_clusters)
 
     amplitude_cutoffs = np.zeros((total_units,))
 
@@ -241,14 +257,20 @@ def calculate_pc_metrics(spike_clusters,
                          n_neighbors,
                          min_num_pcs=10,
                          metric_names=None,
-                         seed=None, verbose=True):
+                         seed=None, 
+                         spike_cluster_subset=None,  
+                         verbose=True):
     assert (num_channels_to_compare % 2 == 1)
     half_spread = int((num_channels_to_compare - 1) / 2)
 
     if metric_names is None:
         metric_names = ['isolation_distance', 'l_ratio', 'd_prime', 'nearest_neighbor']
 
-    cluster_ids = np.unique(spike_clusters)
+    all_cluster_ids = np.unique(spike_clusters)
+    if spike_cluster_subset is not None:
+        cluster_ids = spike_cluster_subset
+    else: 
+        cluster_ids = all_cluster_ids
 
     peak_channels = np.zeros((total_units,), dtype='uint16')
     isolation_distances = np.zeros((total_units,))
@@ -257,7 +279,7 @@ def calculate_pc_metrics(spike_clusters,
     nn_hit_rates = np.zeros((total_units,))
     nn_miss_rates = np.zeros((total_units,))
 
-    for idx, cluster_id in enumerate(cluster_ids):
+    for idx, cluster_id in enumerate(all_cluster_ids):
         for_unit = np.squeeze(spike_clusters == cluster_id)
         pc_max = np.argmax(np.mean(pc_features[for_unit, 0, :], 0))
         peak_channels[cluster_id] = pc_feature_ind[cluster_id, pc_max]
@@ -360,7 +382,9 @@ def calculate_silhouette_score(spike_clusters,
                                pc_features,
                                pc_feature_ind,
                                spikes_for_silhouette,
-                               seed=None, verbose=True):
+                               seed=None, 
+                               spike_cluster_subset=None, 
+                               verbose=True):
     random_spike_inds = np.random.RandomState(seed=seed).permutation(spike_clusters.size)
     random_spike_inds = random_spike_inds[:spikes_for_silhouette]
     num_pc_features = pc_features.shape[1]
@@ -378,25 +402,29 @@ def calculate_silhouette_score(spike_clusters,
 
     cluster_labels = spike_clusters[random_spike_inds]
 
-    cluster_ids = np.unique(cluster_labels)
+    all_cluster_ids = np.unique(spike_clusters)
+    if spike_cluster_subset is not None:
+        cluster_ids = spike_cluster_subset
+    else: 
+        cluster_ids = all_cluster_ids
 
     SS = np.empty((total_units, total_units))
     SS[:] = np.nan
 
+    seen_unit_pairs = set()
     for idx1, i in enumerate(cluster_ids):
 
         if verbose:
             printProgressBar(idx1 + 1, len(cluster_ids))
 
-        for idx2, j in enumerate(cluster_ids):
-
-            if j > i:
+        for idx2, j in enumerate(all_cluster_ids):
+            if (i,j) not in seen_unit_pairs and (j,i) not in seen_unit_pairs and i != j:
                 inds = np.in1d(cluster_labels, np.array([i, j]))
                 X = all_pcs[inds, :]
                 labels = cluster_labels[inds]
-
                 if len(labels) > 2:
-                    SS[i, j] = silhouette_score(X, labels)
+                    SS[i, j] = silhouette_score(X, labels, random_state=seed)
+                seen_unit_pairs.add((i,j))
 
     with warnings.catch_warnings():
       warnings.simplefilter("ignore")
@@ -414,6 +442,7 @@ def calculate_drift_metrics(spike_times,
                             interval_length,
                             min_spikes_per_interval,
                             vertical_channel_spacing=10,
+                            spike_cluster_subset=None, 
                             verbose=True):
 
     max_drift = np.zeros((total_units,))
@@ -423,7 +452,10 @@ def calculate_drift_metrics(spike_times,
     interval_starts = np.arange(np.min(spike_times), np.max(spike_times), interval_length)
     interval_ends = interval_starts + interval_length
 
-    cluster_ids = np.unique(spike_clusters)
+    if spike_cluster_subset is not None:
+        cluster_ids = spike_cluster_subset
+    else: 
+        cluster_ids = np.unique(spike_clusters)
 
     for idx, cluster_id in enumerate(cluster_ids):
 
