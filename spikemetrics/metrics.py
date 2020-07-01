@@ -15,7 +15,7 @@ from scipy.stats import chi2
 from scipy.ndimage.filters import gaussian_filter1d
 
 from .utils import Epoch
-from .utils import printProgressBar, get_spike_depths
+from .utils import printProgressBar, get_spike_positions
 
 
 def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_feature_ind, params,
@@ -449,7 +449,8 @@ def calculate_drift_metrics(spike_times,
     max_drift = np.zeros((total_units,))
     cumulative_drift = np.zeros((total_units,))
 
-    positions = get_spike_depths(spike_clusters, pc_features, pc_feature_ind, channel_locations)
+    positions = get_spike_positions(spike_clusters, pc_features, pc_feature_ind, channel_locations,
+                                    vertical_channel_spacing)
     interval_starts = np.arange(np.min(spike_times), np.max(spike_times), interval_length)
     interval_ends = interval_starts + interval_length
 
@@ -496,6 +497,7 @@ def calculate_drift_metrics(spike_times,
             # Summing them up we obtain cumulative drift
             cumulative_drift[cluster_id] = np.around(np.sum(np.diag(position_diffs, 1)), 2)
         else:
+            # not enough spikes
             max_drift[cluster_id] = 0
             cumulative_drift[cluster_id] = 0
 

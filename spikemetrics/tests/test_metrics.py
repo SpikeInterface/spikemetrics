@@ -218,9 +218,9 @@ def test_calculate_drift_metrics(simulated_drift_pcs):
                                                           4,
                                                           simulated_drift_pcs['pc_features'],
                                                           simulated_drift_pcs['pc_feature_ind'],
-                                                          10, 1, 1)
-
-    # TODO add test with locations
+                                                          interval_length=10,
+                                                          min_spikes_per_interval=1, vertical_channel_spacing=1,
+                                                          channel_locations=None)
 
     assert np.allclose(max_drift, np.array([0, 4.5, 9, 13.5]))
     assert np.allclose(cumulative_drift, np.array([0, 4.5, 9, 13.5]))

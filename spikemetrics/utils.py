@@ -373,11 +373,12 @@ def load_kilosort_data(folder,
         return spike_times, spike_clusters, spike_templates, amplitudes, unwhitened_temps, channel_map, cluster_ids, cluster_quality, pc_features, pc_feature_ind
 
 
-def get_spike_depths(spike_clusters, pc_features, pc_feature_ind, channel_locations=None, vertical_channel_spacing=10):
+def get_spike_positions(spike_clusters, pc_features, pc_feature_ind, channel_locations=None,
+                        vertical_channel_spacing=10):
     """
-    Calculates the distance (in microns) of individual spikes
+    Calculates the estimated position (in microns - x, y) of individual spikes
 
-    If channel locations are not used, it ssumes a linear channel layout, and equal vertical spacing between channels;
+    If channel_locations are not used, it assumes a linear channel layout, and equal vertical spacing between channels;
     for a Neuropixels probe, it does not account for the fact that the probe is staggered.
 
     This implementation is based on Matlab code from github.com/cortex-lab/spikes
