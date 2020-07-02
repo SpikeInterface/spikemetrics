@@ -373,12 +373,13 @@ def load_kilosort_data(folder,
         return spike_times, spike_clusters, spike_templates, amplitudes, unwhitened_temps, channel_map, cluster_ids, cluster_quality, pc_features, pc_feature_ind
 
 
-def get_spike_depths(spike_clusters, pc_features, pc_feature_ind, vertical_channel_spacing=10):
+def get_spike_positions(spike_clusters, pc_features, pc_feature_ind, channel_locations=None,
+                        vertical_channel_spacing=10):
     """
-    Calculates the distance (in microns) of individual spikes from the probe tip
+    Calculates the estimated position (in microns - x, y) of individual spikes
 
-    Assumes a linear channel layout, and equal vertical spacing between channels;
-    for a Neuropixels probe, it does not account for the fact
+    If channel_locations are not used, it assumes a linear channel layout, and equal vertical spacing between channels;
+    for a Neuropixels probe, it does not account for the fact that the probe is staggered.
 
     This implementation is based on Matlab code from github.com/cortex-lab/spikes
 
@@ -390,6 +391,8 @@ def get_spike_depths(spike_clusters, pc_features, pc_feature_ind, vertical_chann
         PC features for each spike
     pc_feature_ind  : numpy.ndarray (M x channels)
         Channels used for PC calculation for each unit
+    channel_locations: numpy.ndarray (num_channels x 2)
+        Locations of all channels of the probe. If None, vertical_channel_spacing is used
     vertical_channel_spacing : float
         Vertical channel spacing in microns (assumed to be equal for all channels)
 
@@ -400,13 +403,19 @@ def get_spike_depths(spike_clusters, pc_features, pc_feature_ind, vertical_chann
 
     """
     pc_features_drift = np.copy(pc_features)
-    pc_features_drift = pc_features_drift[:, 0, :]
+    pc_features_drift = pc_features_drift[:, 0, :]  # ????
     pc_features_drift[pc_features_drift < 0] = 0
     pc_power = pow(pc_features_drift, 2)
     spike_feat_ind = pc_feature_ind[spike_clusters, :]
-    spike_depths = np.sum(spike_feat_ind * pc_power, 1) / np.sum(pc_power, 1)
+    if channel_locations is not None:
+        com = np.array([np.sum((channel_locations[spike_feat_ind][:, :, 0] * pc_power), 1) / np.sum(pc_power, 1),
+                        np.sum((channel_locations[spike_feat_ind][:, :, 1] * pc_power), 1) / np.sum(pc_power, 1)]).T
+    else:
+        spike_depths = np.sum(spike_feat_ind * pc_power, 1) / np.sum(pc_power, 1)
+        com = np.zeros((len(pc_features_drift), 2))
+        com[:, 1] = spike_depths * vertical_channel_spacing
 
-    return spike_depths * vertical_channel_spacing
+    return com
 
 
 def get_spike_amplitudes(spike_templates, templates, amplitudes):

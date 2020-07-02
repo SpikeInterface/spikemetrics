@@ -15,7 +15,7 @@ from scipy.stats import chi2
 from scipy.ndimage.filters import gaussian_filter1d
 
 from .utils import Epoch
-from .utils import printProgressBar, get_spike_depths
+from .utils import printProgressBar, get_spike_positions
 
 
 def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_feature_ind, params,
@@ -442,13 +442,15 @@ def calculate_drift_metrics(spike_times,
                             interval_length,
                             min_spikes_per_interval,
                             vertical_channel_spacing=10,
-                            spike_cluster_subset=None, 
+                            channel_locations=None,
+                            spike_cluster_subset=None,
                             verbose=True):
 
     max_drift = np.zeros((total_units,))
     cumulative_drift = np.zeros((total_units,))
 
-    depths = get_spike_depths(spike_clusters, pc_features, pc_feature_ind, vertical_channel_spacing)
+    positions = get_spike_positions(spike_clusters, pc_features, pc_feature_ind, channel_locations,
+                                    vertical_channel_spacing)
     interval_starts = np.arange(np.min(spike_times), np.max(spike_times), interval_length)
     interval_ends = interval_starts + interval_length
 
@@ -464,23 +466,40 @@ def calculate_drift_metrics(spike_times,
 
         in_cluster = spike_clusters == cluster_id
         times_for_cluster = spike_times[in_cluster]
-        depths_for_cluster = depths[in_cluster]
+        positions_for_cluster = positions[in_cluster]
 
-        median_depths = []
+        median_positions = []
 
         for t1, t2 in zip(interval_starts, interval_ends):
-
             in_range = (times_for_cluster > t1) * (times_for_cluster < t2)
 
             if np.sum(in_range) >= min_spikes_per_interval:
-                median_depths.append(np.median(depths_for_cluster[in_range]))
+                median_positions.append(np.median(positions_for_cluster[in_range], 0))
             else:
-                median_depths.append(np.nan)
+                median_positions.append([np.nan, np.nan])
 
-        median_depths = np.array(median_depths)
+        median_positions = np.array(median_positions)
 
-        max_drift[cluster_id] = np.around(np.nanmax(median_depths) - np.nanmin(median_depths), 2)
-        cumulative_drift[cluster_id] = np.around(np.nansum(np.abs(np.diff(median_depths))), 2)
+        # Extract emi-matrix of shifts in positions (used to extract max_drift and cum_drift)
+        position_diffs = np.zeros((len(median_positions), len(median_positions)))
+        for i, pos_i in enumerate(median_positions):
+            for j, pos_j in enumerate(median_positions):
+                if j > i:
+                    if not np.isnan(pos_i[0]) and not np.isnan(pos_j[0]):
+                        position_diffs[i, j] = np.linalg.norm(pos_i - pos_j)
+                    else:
+                        position_diffs[i, j] = 0
+
+        # Maximum drift among all periods
+        if np.any(position_diffs > 0):
+            max_drift[cluster_id] = np.around(np.max(position_diffs[position_diffs > 0]), 2)
+            # The +1 diagonal contains the step-by-step drifts between intervals.
+            # Summing them up we obtain cumulative drift
+            cumulative_drift[cluster_id] = np.around(np.sum(np.diag(position_diffs, 1)), 2)
+        else:
+            # not enough spikes
+            max_drift[cluster_id] = 0
+            cumulative_drift[cluster_id] = 0
 
     return max_drift, cumulative_drift
 
