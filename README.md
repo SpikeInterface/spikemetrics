@@ -20,8 +20,8 @@ Copyright 2019. Allen Institute.  All rights reserved.
 | _d'_               |![](images/d_prime.png)   | The classification accuracy between units based on linear discriminant analysis (LDA).               | Hill et al. (2011) _J Neurosci_ **31**, 8699-9705 |
 | Nearest-neighbors  |![](images/nn_overlap.png)| Non-parametric estimate of unit contamination using nearest-neighbor classification.      | Chung et al. (2017) _Neuron_ **95**, 1381-1394 |
 | Silhouette score  |                           | A standard metric for quantifying cluster overlap      |         |
-| Maximum drift     |                           | Maximum change in spike depth throughout recording    |         |
-| Cumulative drift  |                           | Cumulative change in spike depth throughout recording |         |
+| Maximum drift     |                           | Maximum change in spike position throughout recording    |         |
+| Cumulative drift  |                           | Cumulative change in spike position throughout recording |         |
 
 ### A Note on Calculations
 
