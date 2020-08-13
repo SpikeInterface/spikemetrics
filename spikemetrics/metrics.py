@@ -680,7 +680,7 @@ def mahalanobis_metrics(all_pcs, all_labels, this_unit_id):
 
     if n >= 2:
         dof = pcs_for_this_unit.shape[1]  # number of features
-        l_ratio = np.sum(1 - chi2.cdf(pow(mahalanobis_other, 2), dof)) / mahalanobis_other.shape[0]
+        l_ratio = np.sum(1 - chi2.cdf(pow(mahalanobis_other, 2), dof)) / mahalanobis_self.shape[0]
         isolation_distance = pow(mahalanobis_other[n - 1], 2)
         # if math.isnan(l_ratio):
         #     print("NaN detected", mahalanobis_other, VI)
