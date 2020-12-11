@@ -368,7 +368,7 @@ def calculate_pc_metrics(spike_clusters,
                 nn_hit_rates[cluster_id] = np.nan
                 nn_miss_rates[cluster_id] = np.nan
         else:
-            print('not enough spikes')
+            print('only have ' + str(all_pcs.shape[0]) + ' spikes, which is not enough')
             isolation_distances[cluster_id] = np.nan
             l_ratios[cluster_id] = np.nan
             d_primes[cluster_id] = np.nan
