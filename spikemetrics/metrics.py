@@ -332,10 +332,15 @@ def calculate_pc_metrics(spike_clusters,
             except IndexError:
                 # Occurs when pc_feature_ind does not contain all channels of interest
                 # In that case, we will exclude this unit for the calculation
+                print('indexerror occurred')
                 pass
             else:
+                print('no index error')
                 subsample = int(relative_counts[idx2])
+                print('subsample: ' + str(subsample))
                 index_mask = make_index_mask(spike_clusters, cluster_id2, min_num=0, max_num=subsample, seed=seed)
+                print('index_mask: ' + str(index_mask))
+                print('channel_mask: ' + str(channel_mask))
                 pcs = get_unit_pcs(pc_features, index_mask, channel_mask)
                 labels = np.ones((pcs.shape[0],)) * cluster_id2
 
@@ -364,7 +369,6 @@ def calculate_pc_metrics(spike_clusters,
                                                                                                 spikes_for_nn,
                                                                                                 n_neighbors)
             else:
-                print('nearest_neighbor not specified')
                 nn_hit_rates[cluster_id] = np.nan
                 nn_miss_rates[cluster_id] = np.nan
         else:
