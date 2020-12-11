@@ -150,7 +150,7 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
 def calculate_isi_violations(spike_times, spike_clusters, total_units, isi_threshold, min_isi, duration, spike_cluster_subset=None,  verbose=True):
     if spike_cluster_subset is not None:
         cluster_ids = spike_cluster_subset
-    else: 
+    else:
         cluster_ids = np.unique(spike_clusters)
 
     viol_rates = np.zeros((total_units,))
@@ -172,7 +172,7 @@ def calculate_isi_violations(spike_times, spike_clusters, total_units, isi_thres
 def calculate_presence_ratio(spike_times, spike_clusters, total_units, duration, spike_cluster_subset=None, verbose=True):
     if spike_cluster_subset is not None:
         cluster_ids = spike_cluster_subset
-    else: 
+    else:
         cluster_ids = np.unique(spike_clusters)
 
     ratios = np.zeros((total_units,))
@@ -194,7 +194,7 @@ def calculate_num_spikes(spike_times, spike_clusters, total_units, spike_cluster
     num_spikes = np.zeros((total_units,))
     if spike_cluster_subset is not None:
         cluster_ids = spike_cluster_subset
-    else: 
+    else:
         cluster_ids = np.unique(spike_clusters)
 
     for idx, cluster_id in enumerate(cluster_ids):
@@ -211,9 +211,9 @@ def calculate_num_spikes(spike_times, spike_clusters, total_units, spike_cluster
 def calculate_firing_rates(spike_times, spike_clusters, total_units, duration, spike_cluster_subset=None, verbose=True):
     if spike_cluster_subset is not None:
         cluster_ids = spike_cluster_subset
-    else: 
+    else:
         cluster_ids = np.unique(spike_clusters)
-    
+
     firing_rates = np.zeros((total_units,))
 
     for idx, cluster_id in enumerate(cluster_ids):
@@ -231,7 +231,7 @@ def calculate_firing_rates(spike_times, spike_clusters, total_units, duration, s
 def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units, spike_cluster_subset=None,  verbose=True):
     if spike_cluster_subset is not None:
         cluster_ids = spike_cluster_subset
-    else: 
+    else:
         cluster_ids = np.unique(spike_clusters)
 
     amplitude_cutoffs = np.zeros((total_units,))
@@ -257,8 +257,8 @@ def calculate_pc_metrics(spike_clusters,
                          n_neighbors,
                          min_num_pcs=10,
                          metric_names=None,
-                         seed=None, 
-                         spike_cluster_subset=None,  
+                         seed=None,
+                         spike_cluster_subset=None,
                          verbose=True):
     assert (num_channels_to_compare % 2 == 1)
     half_spread = int((num_channels_to_compare - 1) / 2)
@@ -269,7 +269,7 @@ def calculate_pc_metrics(spike_clusters,
     all_cluster_ids = np.unique(spike_clusters)
     if spike_cluster_subset is not None:
         cluster_ids = spike_cluster_subset
-    else: 
+    else:
         cluster_ids = all_cluster_ids
 
     peak_channels = np.zeros((total_units,), dtype='uint16')
@@ -364,10 +364,11 @@ def calculate_pc_metrics(spike_clusters,
                                                                                                 spikes_for_nn,
                                                                                                 n_neighbors)
             else:
+                print('nearest_neighbor not specified')
                 nn_hit_rates[cluster_id] = np.nan
                 nn_miss_rates[cluster_id] = np.nan
         else:
-
+            print('not enough spikes')
             isolation_distances[cluster_id] = np.nan
             l_ratios[cluster_id] = np.nan
             d_primes[cluster_id] = np.nan
@@ -382,8 +383,8 @@ def calculate_silhouette_score(spike_clusters,
                                pc_features,
                                pc_feature_ind,
                                spikes_for_silhouette,
-                               seed=None, 
-                               spike_cluster_subset=None, 
+                               seed=None,
+                               spike_cluster_subset=None,
                                verbose=True):
     random_spike_inds = np.random.RandomState(seed=seed).permutation(spike_clusters.size)
     random_spike_inds = random_spike_inds[:spikes_for_silhouette]
@@ -405,7 +406,7 @@ def calculate_silhouette_score(spike_clusters,
     all_cluster_ids = np.unique(spike_clusters)
     if spike_cluster_subset is not None:
         cluster_ids = spike_cluster_subset
-    else: 
+    else:
         cluster_ids = all_cluster_ids
 
     SS = np.empty((total_units, total_units))
@@ -456,7 +457,7 @@ def calculate_drift_metrics(spike_times,
 
     if spike_cluster_subset is not None:
         cluster_ids = spike_cluster_subset
-    else: 
+    else:
         cluster_ids = np.unique(spike_clusters)
 
     for idx, cluster_id in enumerate(cluster_ids):
@@ -737,6 +738,9 @@ def nearest_neighbors_metrics(all_pcs, all_labels, this_unit_id, spikes_for_nn, 
 
     Based on metrics described in Chung, Magland et al. (2017) Neuron 95: 1381-1394
 
+    A is a (hopefully) representative subset of cluster X
+    NN_hit(X) = 1/k \sum_i=1^k |{x in A such that ith closest neighbor is in X}| / |A|
+
     Inputs:
     -------
     all_pcs : numpy.ndarray (num_spikes x PCs)
@@ -758,23 +762,64 @@ def nearest_neighbors_metrics(all_pcs, all_labels, this_unit_id, spikes_for_nn, 
         Fraction of neighbors outside target cluster that are in target cluster
 
     """
+    # np.random.default_rng(47)
+    #
+    # # get spike counts
+    # n_spikes_total = all_pcs.shape[0]
+    # n_spikes_this_unit = np.sum(all_labels==this_unit_id)
+    #
+    # # make sure inputs are sensible
+    # if n_neighbors > n_spikes_total:
+    #     print('n_neighbors is too large, defaulting to total number of spikes')
+    #     n_neighbors = n_spikes_total-1
+    # if spikes_for_nn > n_spikes_this_unit:
+    #     print('spikes_for_nn is too large, defaulting to every spike in unit')
+    #     spikes_for_nn = n_spikes_this_unit
+    #
+    # # randomly sample a subset of spikes
+    # inds_spikes_this_unit = np.where(all_labels==this_unit_id)[0]
+    # inds_pcs_for_nn = np.random.choice(inds_spikes_this_unit, size=spikes_for_nn, replace=False)
+    #
+    # # find nearest neighbors
+    # indices = NearestNeighbors(n_neighbors=n_neighbors,
+    #                         algorithm='auto').fit(all_pcs).kneighbors(all_pcs[inds_pcs_for_nn],
+    #                                                                 return_distance=False)
+    # # compare cluster membership with kth closest neighbor
+    # knn_overlap_rate = np.zeros(indices.shape[1])
+    # for k in range(indices.shape[1]):
+    #     knn_overlap_rate[k] = (np.sum(all_labels[indices[:,k]]==this_unit_id)/len(indices[:,k]))
+    #
+    # # take expectation over k
+    # hit_rate = np.mean(knn_overlap_rate)
+    # miss_rate = np.mean(1-knn_overlap_rate)
 
+    # total number of spikes
     total_spikes = all_pcs.shape[0]
+    # why calculate this ratio?
     ratio = spikes_for_nn / total_spikes
     this_unit = all_labels == this_unit_id
 
+    # this just rearranges 'all_pcs' to have the pca projection of spikes from
+    # 'this_unit' come before all the others - why do this?
     X = np.concatenate((all_pcs[this_unit, :], all_pcs[np.invert(this_unit), :]), 0)
 
+    # number of spikes that belong to 'this_unit'
     n = np.sum(this_unit)
 
+    # what if ratio is greater than 1, i.e. the user specified nn spikes is
+    # greater than the total spikes?
     if ratio < 1:
+        # X.shape[0] is same as total_spikes
         inds = np.arange(0, X.shape[0] - 1, 1 / ratio).astype('int')
+        # subsample X - why?
         X = X[inds, :]
+
         n = int(n * ratio)
 
     nbrs = NearestNeighbors(n_neighbors=n_neighbors, algorithm='ball_tree').fit(X)
     distances, indices = nbrs.kneighbors(X)
 
+    # why do this
     this_cluster_inds = np.arange(n)
 
     this_cluster_nearest = indices[:n, 1:].flatten()
