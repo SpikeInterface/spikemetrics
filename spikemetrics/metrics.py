@@ -308,7 +308,10 @@ def calculate_pc_metrics(spike_clusters,
         units_for_channel = units_for_channel[units_in_range]
         channel_index = channel_index[units_in_range]
 
-        channels_to_use = np.arange(peak_channel - half_spread_down, peak_channel + half_spread_up + 1)
+        min_ind_channel = min(pc_feature_ind[cluster_id])
+        max_ind_channel = max(pc_feature_ind[cluster_id])
+        channels_to_use = np.arange(max(peak_channel - half_spread_down,min_ind_channel),
+                                    min(peak_channel + half_spread_up + 1,max_ind_channel))
 
         spike_counts = np.zeros(units_for_channel.shape)
 
