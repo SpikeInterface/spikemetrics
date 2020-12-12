@@ -249,7 +249,7 @@ def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units, spike_cl
 
 def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
                          num_channels_to_compare,max_spikes_for_cluster,spikes_for_nn,
-                         n_neighbors,channel_locations=None,min_num_pcs=10,metric_names=None,
+                         n_neighbors,channel_locations,min_num_pcs=10,metric_names=None,
                          seed=None,spike_cluster_subset=None,verbose=True):
     """
     Computes metrics from projection of waveforms to principal components
