@@ -328,8 +328,10 @@ def calculate_pc_metrics(spike_clusters,
         for idx2, cluster_id2 in enumerate(units_for_channel):
 
             try:
+                print('cluster_id2: '+ str(cluster_id2))
+                print('pc_feature_ind: '+ str(pc_feature_ind))
+                print('channels_to_use: '+ str(channels_to_use))
                 channel_mask = make_channel_mask(cluster_id2, pc_feature_ind, channels_to_use)
-                print(channel_mask)
             except IndexError:
                 # Occurs when pc_feature_ind does not contain all channels of interest
                 # In that case, we will exclude this unit for the calculation
