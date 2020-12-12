@@ -415,7 +415,7 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
                 d_primes[cluster_id] = np.nan
 
             if 'nearest_neighbor' in metric_names:
-                if idx2==0:
+                if idx==0:
                     x = dict()
                     x['all_pcs'] = all_pcs
                     x['all_labels'] = all_labels
