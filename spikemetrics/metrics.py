@@ -257,13 +257,13 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
 
     Parameters
     ----------
-    spike_clusters: numpy.ndarray (num_spikes x 0)
+    spike_clusters: numpy.ndarray (num_spikes,)
         Unit ID for each spike time
     total_units: int
         Total number of units
-    pc_features: numpy.ndarray (num_spikes x num_pcs x num_channels)
+    pc_features: numpy.ndarray (num_spikes, num_pcs, num_channels)
         Pre-computed PCs for blocks of channels around each spike
-    pc_feature_ind: numpy.ndarray (num_units x num_channels)
+    pc_feature_ind: numpy.ndarray (num_units, num_channels)
         Channel indices of PCs for each unit
     num_channels_to_compare: int
         Number of channels around the max channel over which to compute the
@@ -323,22 +323,19 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
     for idx, cluster_id in enumerate(all_cluster_ids):
         for_unit = np.squeeze(spike_clusters == cluster_id)
         pc_max = np.argmax(np.mean(pc_features[for_unit, 0, :], 0))
-        peak_channels[cluster_id] = pc_feature_ind[cluster_id, pc_max]
-        print('peak chan: ' + str(pc_feature_ind[cluster_id, pc_max]))
-        print('channel list: '+ str(pc_feature_ind[cluster_id, :]))
+        peak_channels[idx] = pc_feature_ind[idx, pc_max]
         if channel_locations is not None:
             # find neighboring channels
-            neighboring_channels[cluster_id]= find_neighboring_channels(pc_feature_ind[cluster_id, pc_max],
-                                                                        pc_feature_ind[cluster_id, :],
-                                                                        num_channels_to_compare,
-                                                                        channel_locations)
-    print(neighboring_channels)
+            neighboring_channels[idx]= find_neighboring_channels(pc_feature_ind[idx, pc_max],
+                                                                pc_feature_ind[idx, :],
+                                                                num_channels_to_compare,
+                                                                channel_locations)
     for idx, cluster_id in enumerate(cluster_ids):
 
         if verbose:
             printProgressBar(cluster_id + 1, total_units)
 
-        peak_channel = peak_channels[cluster_id]
+        peak_channel = peak_channels[idx]
 
         half_spread_down = peak_channel \
             if peak_channel < half_spread \
@@ -348,18 +345,23 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
             if peak_channel + half_spread > np.max(pc_feature_ind) \
             else half_spread
 
+        # units_for_channel: index of units
         units_for_channel, channel_index = np.unravel_index(np.where(pc_feature_ind.flatten() == peak_channel)[0],
                                                             pc_feature_ind.shape)
+
         if channel_locations is None:
             units_in_range = (peak_channels[units_for_channel] >= peak_channel - half_spread_down) * \
                             (peak_channels[units_for_channel] <= peak_channel + half_spread_up)
             channels_to_use = np.arange(peak_channel - half_spread_down,
                                         peak_channel + half_spread_up + 1)
         else:
-            units_in_range = [i in neighboring_channels[cluster_id] for i in peak_channels[units_for_channel]]
-            channels_to_use = neighboring_channels[cluster_id]
+            # units_in_range: list of bool, True for units whose peak channels are in the neighborhood of target unit
+            units_in_range = [i in neighboring_channels[idx] for i in peak_channels[units_for_channel]]
+            channels_to_use = neighboring_channels[idx]
 
+        # only get index of units who are in the neighborhood of target unit
         units_for_channel = units_for_channel[units_in_range]
+        # index of channels over which PCA is computed, for units in the neighborhood of target unit
         channel_index = channel_index[units_in_range]
 
         spike_counts = np.zeros(units_for_channel.shape)
@@ -367,6 +369,7 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
         for idx2, cluster_id2 in enumerate(units_for_channel):
             spike_counts[idx2] = np.sum(spike_clusters == cluster_id2)
 
+        # index of target unit within the subset of units in its neighborhood (including itself)
         this_unit_idx = np.where(units_for_channel == cluster_id)[0]
 
         if spike_counts[this_unit_idx] > max_spikes_for_cluster:
@@ -380,14 +383,11 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
         for idx2, cluster_id2 in enumerate(units_for_channel):
 
             try:
-                print('cluster_id2: '+ str(cluster_id2))
-                print('pc_feature_ind: '+ str(pc_feature_ind))
-                print('channels_to_use: '+ str(channels_to_use))
                 channel_mask = make_channel_mask(cluster_id2, pc_feature_ind, channels_to_use)
             except IndexError:
                 # Occurs when pc_feature_ind does not contain all channels of interest
                 # In that case, we will exclude this unit for the calculation
-                print('indexerror')
+                print('Unit outside the range set by channel_to_use, skipping...')
                 pass
             else:
                 subsample = int(relative_counts[idx2])
@@ -415,15 +415,23 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
                 d_primes[cluster_id] = np.nan
 
             if 'nearest_neighbor' in metric_names:
-                nn_hit_rates[cluster_id], nn_miss_rates[cluster_id] = nearest_neighbors_metrics(all_pcs, all_labels,
-                                                                                                cluster_id,
-                                                                                                spikes_for_nn,
-                                                                                                n_neighbors)
+                if idx2==0:
+                    x = dict()
+                    x['all_pcs'] = all_pcs
+                    x['all_labels'] = all_labels
+                    x['cluster_id'] = cluster_id
+                    x['spikes_for_nn'] = spikes_for_nn
+                    x['n_neighbors'] = n_neighbors
+                    np.save('/stelmo/nwb/nn.npy',x)
+                nn_hit_rates[idx], nn_miss_rates[idx] = nearest_neighbors_metrics(all_pcs, all_labels,
+                                                                                cluster_id,
+                                                                                spikes_for_nn,
+                                                                                n_neighbors)
             else:
                 nn_hit_rates[cluster_id] = np.nan
                 nn_miss_rates[cluster_id] = np.nan
         else:
-            print('only have ' + str(all_pcs.shape[0]) + ' spikes, which is not enough')
+            print('Unit only has ' + str(all_pcs.shape[0]) + ' spikes, which is not enough to compute metric')
             isolation_distances[cluster_id] = np.nan
             l_ratios[cluster_id] = np.nan
             d_primes[cluster_id] = np.nan
