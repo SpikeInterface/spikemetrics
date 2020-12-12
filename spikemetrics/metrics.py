@@ -329,7 +329,7 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
             neighboring_channels[cluster_id]= find_neighboring_channels(pc_feature_ind[cluster_id, pc_max],
                                                                         pc_feature_ind[cluster_id, :],
                                                                         num_channels_to_compare,
-                                                                        channel_locations))
+                                                                        channel_locations)
 
     for idx, cluster_id in enumerate(cluster_ids):
 
