@@ -324,6 +324,8 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
         for_unit = np.squeeze(spike_clusters == cluster_id)
         pc_max = np.argmax(np.mean(pc_features[for_unit, 0, :], 0))
         peak_channels[cluster_id] = pc_feature_ind[cluster_id, pc_max]
+        print('peak chan: ' + str(pc_feature_ind[cluster_id, pc_max]))
+        print('channel list: '+ str(pc_feature_ind[cluster_id, :]))
         if channel_locations is not None:
             # find neighboring channels
             neighboring_channels[cluster_id]= find_neighboring_channels(pc_feature_ind[cluster_id, pc_max],
