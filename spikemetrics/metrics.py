@@ -247,19 +247,57 @@ def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units, spike_cl
     return amplitude_cutoffs
 
 
-def calculate_pc_metrics(spike_clusters,
-                         total_units,
-                         pc_features,
-                         pc_feature_ind,
-                         num_channels_to_compare,
-                         max_spikes_for_cluster,
-                         spikes_for_nn,
-                         n_neighbors,
-                         min_num_pcs=10,
-                         metric_names=None,
-                         seed=None,
-                         spike_cluster_subset=None,
-                         verbose=True):
+def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
+                         num_channels_to_compare,max_spikes_for_cluster,spikes_for_nn,
+                         n_neighbors,channel_locations=None,min_num_pcs=10,metric_names=None,
+                         seed=None,spike_cluster_subset=None,verbose=True):
+     """
+     Computes metrics from projection of waveforms to principal components
+     including: isolation distance, l ratio, d prime, nn hit rate, nn miss rate
+
+     Parameters
+     ----------
+     spike_clusters: numpy.ndarray (num_spikes x 0)
+        Unit ID for each spike time
+     total_units: int
+        Total number of units
+     pc_features: numpy.ndarray (num_spikes x num_pcs x num_channels)
+        Pre-computed PCs for blocks of channels around each spike
+     pc_feature_ind: numpy.ndarray (num_units x num_channels)
+        Channel indices of PCs for each unit
+     num_channels_to_compare: int
+        Number of channels around the max channel over which to compute the
+        metrics (e.g. in the case of nearest neighbor metrics, only units from
+        these channels will be considered together)
+     max_spikes_for_cluster: int
+        Total number of spikes to use for computing the metrics
+     spikes_for_nn: int
+        Number of spikes in a unit to use for computing nearest neighbor metrics
+        (nn_hit_rate, nn_miss_rate)
+     n_neighbors: int
+        Number of nearest neighbors to compare membership
+     channel_locations: array, (channels, 2); default=None
+        If None then assume neuropixels-like arrangement;
+        else use this to compute neighboring channels
+     min_num_pcs: int, default=10
+        Minimum number of spikes a unit must have to compute these metrics
+     metric_names: list of str, default=None
+        List of metrics to compute
+     seed: int, default=None
+        Random seed for subsampling spikes from the unit
+     spike_cluster_subset: numpy.array (int,), default=None
+        If specified compute metrics for only these units
+     verbose: bool, default=True
+        Prints out progress bar if true
+
+     Returns (1d numpy.array)
+     -------
+     isolation_distances
+     l_ratios
+     d_primes
+     nn_hit_rates
+     nn_miss_rates
+     """
     assert (num_channels_to_compare % 2 == 1)
     half_spread = int((num_channels_to_compare - 1) / 2)
 
@@ -278,11 +316,19 @@ def calculate_pc_metrics(spike_clusters,
     d_primes = np.zeros((total_units,))
     nn_hit_rates = np.zeros((total_units,))
     nn_miss_rates = np.zeros((total_units,))
+    if channel_locations is not None:
+        neighboring_channels = np.zeros((total_units,num_channels_to_compare))
 
     for idx, cluster_id in enumerate(all_cluster_ids):
         for_unit = np.squeeze(spike_clusters == cluster_id)
         pc_max = np.argmax(np.mean(pc_features[for_unit, 0, :], 0))
         peak_channels[cluster_id] = pc_feature_ind[cluster_id, pc_max]
+        if channel_locations is not None:
+            # find neighboring channels
+            neighboring_channels[cluster_id]= find_neighboring_channels(pc_feature_ind[cluster_id, pc_max],
+                                                                        pc_feature_ind[cluster_id, :],
+                                                                        num_channels_to_compare,
+                                                                        channel_locations))
 
     for idx, cluster_id in enumerate(cluster_ids):
 
@@ -301,17 +347,17 @@ def calculate_pc_metrics(spike_clusters,
 
         units_for_channel, channel_index = np.unravel_index(np.where(pc_feature_ind.flatten() == peak_channel)[0],
                                                             pc_feature_ind.shape)
-
-        units_in_range = (peak_channels[units_for_channel] >= peak_channel - half_spread_down) * \
-                         (peak_channels[units_for_channel] <= peak_channel + half_spread_up)
+        if channel_locations is None:
+            units_in_range = (peak_channels[units_for_channel] >= peak_channel - half_spread_down) * \
+                            (peak_channels[units_for_channel] <= peak_channel + half_spread_up)
+            channels_to_use = np.arange(peak_channel - half_spread_down,
+                                        peak_channel + half_spread_up + 1)
+        else:
+            units_in_range = peak_channels[units_for_channel] in neighboring_channels[cluster_id]
+            channels_to_use = neighboring_channels[cluster_id]
 
         units_for_channel = units_for_channel[units_in_range]
         channel_index = channel_index[units_in_range]
-
-        min_ind_channel = min(pc_feature_ind[cluster_id])
-        max_ind_channel = max(pc_feature_ind[cluster_id])
-        channels_to_use = np.arange(max(peak_channel - half_spread_down,min_ind_channel),
-                                    min(peak_channel + half_spread_up + 1,max_ind_channel))
 
         spike_counts = np.zeros(units_for_channel.shape)
 
@@ -927,3 +973,29 @@ def get_unit_pcs(these_pc_features, index_mask, channel_mask):
     unit_PCs = unit_PCs[:, :, channel_mask]
 
     return unit_PCs
+
+def find_neighboring_channels(peak_channel, channel_list, num_channels_to_compare, channel_locations):
+    """
+    Finds k nearest channels to the peak channel of a unit
+
+    Parameters
+    ----------
+    peak_channel: int
+        id of channel with largest waveform amplitude
+    channel_list: array_like
+        ids of channels being considered
+    num_channels_to_compare: int
+        number of nearest channels to return
+    channel_locations: array_like, (n_channels, 2)
+        x,y coordinates of the channels in channel_list
+
+    Returns
+    -------
+    neighboring_channels: array_like
+        id of k channels that neighbor peak channel (including the peak channel itself)
+    """
+    neighboring_channels_inds = NearestNeighbors(n_neighbors=num_channels_to_compare,
+                                algorithm='auto').fit(channel_locations).kneighbors([channel_locations[channel_list==peak_channel]],
+                                                                    return_distance=False)[0]
+    neighboring_channels = channel_list[neighboring_channels_inds]
+    return neighboring_channels
