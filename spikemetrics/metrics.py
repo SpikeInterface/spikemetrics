@@ -415,18 +415,20 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
                 d_primes[cluster_id] = np.nan
 
             if 'nearest_neighbor' in metric_names:
-                if idx==0:
-                    x = dict()
-                    x['all_pcs'] = all_pcs
-                    x['all_labels'] = all_labels
-                    x['cluster_id'] = cluster_id
-                    x['spikes_for_nn'] = spikes_for_nn
-                    x['n_neighbors'] = n_neighbors
-                    np.save('/stelmo/nwb/nn.npy',x)
+                # if idx==0:
+                #     x = dict()
+                #     x['all_pcs'] = all_pcs
+                #     x['all_labels'] = all_labels
+                #     x['cluster_id'] = cluster_id
+                #     x['spikes_for_nn'] = spikes_for_nn
+                #     x['n_neighbors'] = n_neighbors
+                #     np.save('/stelmo/nwb/nn.npy',x)
                 nn_hit_rates[idx], nn_miss_rates[idx] = nearest_neighbors_metrics(all_pcs, all_labels,
                                                                                 cluster_id,
                                                                                 spikes_for_nn,
                                                                                 n_neighbors)
+                print('nn_hit_rates: ' + str(nn_hit_rates[idx]))
+                print('nn_miss_rates: '+ str(nn_miss_rates[idx]))
             else:
                 nn_hit_rates[cluster_id] = np.nan
                 nn_miss_rates[cluster_id] = np.nan
