@@ -998,7 +998,7 @@ def find_neighboring_channels(peak_channel, channel_list, num_channels_to_compar
         id of k channels that neighbor peak channel (including the peak channel itself)
     """
     neighboring_channels_inds = NearestNeighbors(n_neighbors=num_channels_to_compare,
-                                algorithm='auto').fit(channel_locations).kneighbors(channel_locations[[i==peak_chan for i in channel_list]],
+                                algorithm='auto').fit(channel_locations).kneighbors(channel_locations[[i==peak_channel for i in channel_list]],
                                                                     return_distance=False)[0]
     neighboring_channels = channel_list[neighboring_channels_inds]
     return neighboring_channels
