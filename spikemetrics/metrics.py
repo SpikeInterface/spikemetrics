@@ -251,53 +251,54 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
                          num_channels_to_compare,max_spikes_for_cluster,spikes_for_nn,
                          n_neighbors,channel_locations=None,min_num_pcs=10,metric_names=None,
                          seed=None,spike_cluster_subset=None,verbose=True):
-     """
-     Computes metrics from projection of waveforms to principal components
-     including: isolation distance, l ratio, d prime, nn hit rate, nn miss rate
+    """
+    Computes metrics from projection of waveforms to principal components
+    including: isolation distance, l ratio, d prime, nn hit rate, nn miss rate
 
-     Parameters
-     ----------
-     spike_clusters: numpy.ndarray (num_spikes x 0)
+    Parameters
+    ----------
+    spike_clusters: numpy.ndarray (num_spikes x 0)
         Unit ID for each spike time
-     total_units: int
+    total_units: int
         Total number of units
-     pc_features: numpy.ndarray (num_spikes x num_pcs x num_channels)
+    pc_features: numpy.ndarray (num_spikes x num_pcs x num_channels)
         Pre-computed PCs for blocks of channels around each spike
-     pc_feature_ind: numpy.ndarray (num_units x num_channels)
+    pc_feature_ind: numpy.ndarray (num_units x num_channels)
         Channel indices of PCs for each unit
-     num_channels_to_compare: int
+    num_channels_to_compare: int
         Number of channels around the max channel over which to compute the
         metrics (e.g. in the case of nearest neighbor metrics, only units from
         these channels will be considered together)
-     max_spikes_for_cluster: int
+    max_spikes_for_cluster: int
         Total number of spikes to use for computing the metrics
-     spikes_for_nn: int
+    spikes_for_nn: int
         Number of spikes in a unit to use for computing nearest neighbor metrics
         (nn_hit_rate, nn_miss_rate)
-     n_neighbors: int
+    n_neighbors: int
         Number of nearest neighbors to compare membership
-     channel_locations: array, (channels, 2); default=None
+    channel_locations: array, (channels, 2); default=None
         If None then assume neuropixels-like arrangement;
         else use this to compute neighboring channels
-     min_num_pcs: int, default=10
+    min_num_pcs: int, default=10
         Minimum number of spikes a unit must have to compute these metrics
-     metric_names: list of str, default=None
-        List of metrics to compute
-     seed: int, default=None
-        Random seed for subsampling spikes from the unit
-     spike_cluster_subset: numpy.array (int,), default=None
+    metric_names: list of str, default=None
+    List of metrics to compute
+    seed: int, default=None
+    Random seed for subsampling spikes from the unit
+    spike_cluster_subset: numpy.array (int,), default=None
         If specified compute metrics for only these units
-     verbose: bool, default=True
+    verbose: bool, default=True
         Prints out progress bar if true
 
-     Returns (1d numpy.array)
-     -------
-     isolation_distances
-     l_ratios
-     d_primes
-     nn_hit_rates
-     nn_miss_rates
-     """
+    Returns (1d numpy.array)
+    -------
+    isolation_distances
+    l_ratios
+    d_primes
+    nn_hit_rates
+    nn_miss_rates
+    """
+
     assert (num_channels_to_compare % 2 == 1)
     half_spread = int((num_channels_to_compare - 1) / 2)
 
