@@ -330,7 +330,7 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
                                                                         pc_feature_ind[cluster_id, :],
                                                                         num_channels_to_compare,
                                                                         channel_locations)
-
+    print(neighboring_channels)
     for idx, cluster_id in enumerate(cluster_ids):
 
         if verbose:
@@ -354,7 +354,7 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
             channels_to_use = np.arange(peak_channel - half_spread_down,
                                         peak_channel + half_spread_up + 1)
         else:
-            units_in_range = peak_channels[units_for_channel] in neighboring_channels[cluster_id]
+            units_in_range = [i in neighboring_channels[cluster_id] for i in peak_channels[units_for_channel]]
             channels_to_use = neighboring_channels[cluster_id]
 
         units_for_channel = units_for_channel[units_in_range]
