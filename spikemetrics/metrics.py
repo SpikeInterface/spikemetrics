@@ -819,64 +819,23 @@ def nearest_neighbors_metrics(all_pcs, all_labels, this_unit_id, spikes_for_nn, 
         Fraction of neighbors outside target cluster that are in target cluster
 
     """
-    # np.random.default_rng(47)
-    #
-    # # get spike counts
-    # n_spikes_total = all_pcs.shape[0]
-    # n_spikes_this_unit = np.sum(all_labels==this_unit_id)
-    #
-    # # make sure inputs are sensible
-    # if n_neighbors > n_spikes_total:
-    #     print('n_neighbors is too large, defaulting to total number of spikes')
-    #     n_neighbors = n_spikes_total-1
-    # if spikes_for_nn > n_spikes_this_unit:
-    #     print('spikes_for_nn is too large, defaulting to every spike in unit')
-    #     spikes_for_nn = n_spikes_this_unit
-    #
-    # # randomly sample a subset of spikes
-    # inds_spikes_this_unit = np.where(all_labels==this_unit_id)[0]
-    # inds_pcs_for_nn = np.random.choice(inds_spikes_this_unit, size=spikes_for_nn, replace=False)
-    #
-    # # find nearest neighbors
-    # indices = NearestNeighbors(n_neighbors=n_neighbors,
-    #                         algorithm='auto').fit(all_pcs).kneighbors(all_pcs[inds_pcs_for_nn],
-    #                                                                 return_distance=False)
-    # # compare cluster membership with kth closest neighbor
-    # knn_overlap_rate = np.zeros(indices.shape[1])
-    # for k in range(indices.shape[1]):
-    #     knn_overlap_rate[k] = (np.sum(all_labels[indices[:,k]]==this_unit_id)/len(indices[:,k]))
-    #
-    # # take expectation over k
-    # hit_rate = np.mean(knn_overlap_rate)
-    # miss_rate = np.mean(1-knn_overlap_rate)
 
-    # total number of spikes
     total_spikes = all_pcs.shape[0]
-    # why calculate this ratio?
     ratio = spikes_for_nn / total_spikes
     this_unit = all_labels == this_unit_id
 
-    # this just rearranges 'all_pcs' to have the pca projection of spikes from
-    # 'this_unit' come before all the others - why do this?
     X = np.concatenate((all_pcs[this_unit, :], all_pcs[np.invert(this_unit), :]), 0)
 
-    # number of spikes that belong to 'this_unit'
     n = np.sum(this_unit)
 
-    # what if ratio is greater than 1, i.e. the user specified nn spikes is
-    # greater than the total spikes?
     if ratio < 1:
-        # X.shape[0] is same as total_spikes
         inds = np.arange(0, X.shape[0] - 1, 1 / ratio).astype('int')
-        # subsample X - why?
         X = X[inds, :]
-
         n = int(n * ratio)
 
     nbrs = NearestNeighbors(n_neighbors=n_neighbors, algorithm='ball_tree').fit(X)
     distances, indices = nbrs.kneighbors(X)
 
-    # why do this
     this_cluster_inds = np.arange(n)
 
     this_cluster_nearest = indices[:n, 1:].flatten()
