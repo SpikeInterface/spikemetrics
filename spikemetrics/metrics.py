@@ -421,8 +421,6 @@ def calculate_pc_metrics(spike_clusters,total_units,pc_features,pc_feature_ind,
                                                                                 cluster_id,
                                                                                 spikes_for_nn,
                                                                                 n_neighbors)
-                print('nn_hit_rates: ' + str(nn_hit_rates[idx]))
-                print('nn_miss_rates: '+ str(nn_miss_rates[idx]))
             else:
                 nn_hit_rates[idx] = np.nan
                 nn_miss_rates[idx] = np.nan
