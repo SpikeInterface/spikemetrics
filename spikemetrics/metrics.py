@@ -945,12 +945,12 @@ def find_neighboring_channels(peak_channel, channel_list, num_channels_to_compar
     Parameters
     ----------
     peak_channel: int
-        id of channel with largest waveform amplitude
-    channel_list: array_like
-        ids of channels being considered
+        ID of channel with largest waveform amplitude
+    channel_list: numpy.ndarray
+        IDs of channels being considered
     num_channels_to_compare: int
-        number of nearest channels to return
-    channel_locations: array_like, (n_channels, 2)
+        Number of nearest channels to return
+    channel_locations: array-like, (n_channels, 2)
         x,y coordinates of the channels in channel_list
 
     Returns
@@ -958,8 +958,14 @@ def find_neighboring_channels(peak_channel, channel_list, num_channels_to_compar
     neighboring_channels: array_like
         id of k channels that neighbor peak channel (including the peak channel itself)
     """
-    neighboring_channels_inds = NearestNeighbors(n_neighbors=num_channels_to_compare,
-                                algorithm='auto').fit(channel_locations).kneighbors(channel_locations[[i==peak_channel for i in channel_list]],
-                                                                    return_distance=False)[0]
+    # get peak channel location
+    peak_channel_location = channel_locations[np.argwhere(peak_channel==channel_list)[0,0]]
+    # compute pairwise distance
+    distance = []
+    for loc in channel_locations:
+        d = (peak_channel_location[0] - loc[0])**2 + (peak_channel_location[1] - loc[1])**2
+        distance.append(d)
+    # get k closest channels
+    neighboring_channels_inds = np.array(distance).argsort()[:num_channels_to_compare]
     neighboring_channels = channel_list[neighboring_channels_inds]
     return neighboring_channels
