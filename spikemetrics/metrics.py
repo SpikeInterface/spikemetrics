@@ -256,7 +256,7 @@ def calculate_amplitude_cutoff(spike_clusters, amplitudes, total_units, spike_cl
 
 def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_ind,
                          num_channels_to_compare, max_spikes_for_cluster, spikes_for_nn,
-                         n_neighbors, channel_locations=None, min_num_pcs=10, metric_names=None,
+                         n_neighbors, channel_locations, min_num_pcs=10, metric_names=None,
                          seed=None, spike_cluster_subset=None, verbose=True):
     """
     Computes metrics from projection of waveforms to principal components
@@ -284,9 +284,7 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
     n_neighbors: int
         Number of nearest neighbor spikes to compare membership
     channel_locations: array, (channels, 2)
-        If None then assume Neuropixels 1.0-like arrangement (nearby electrodes
-        have similar Ids)
-        else use this to compute neighboring channels
+        (x,y) location of channels; used to identify neighboring channels
     min_num_pcs: int, default=10
         Minimum number of spikes a unit must have to compute these metrics
     metric_names: list of str, default=None
@@ -296,7 +294,7 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
     spike_cluster_subset: numpy.array (units,), default=None
         If specified compute metrics for only these units
     verbose: bool, default=True
-        Prints out progress bar if true
+        Prints out progress bar if True
 
     Returns (all 1d numpy.arrays)
     -------
@@ -307,11 +305,14 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
     nn_miss_rates
     """
 
-    assert (num_channels_to_compare % 2 == 1)
-    half_spread = int((num_channels_to_compare - 1) / 2)
+    # assert (num_channels_to_compare % 2 == 1)
+    # half_spread = int((num_channels_to_compare - 1) / 2)
 
     if metric_names is None:
         metric_names = ['isolation_distance', 'l_ratio', 'd_prime', 'nearest_neighbor']
+
+    if num_channels_to_compare>channel_locations.shape[0]:
+        num_channels_to_compare=channel_locations.shape[0]
 
     all_cluster_ids = np.unique(spike_clusters)
     if spike_cluster_subset is not None:
@@ -320,6 +321,7 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
         cluster_ids = all_cluster_ids
 
     peak_channels = np.zeros((total_units,), dtype='uint16')
+    neighboring_channels = np.zeros((total_units, num_channels_to_compare))
     isolation_distances = np.zeros((total_units,))
     l_ratios = np.zeros((total_units,))
     d_primes = np.zeros((total_units,))
@@ -330,11 +332,12 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
         for_unit = np.squeeze(spike_clusters == cluster_id)
         pc_max = np.argmax(np.mean(pc_features[for_unit, 0, :], 0))
         peak_channels[idx] = pc_feature_ind[idx, pc_max]
-        if channel_locations is not None:
-            if idx == 0:
-                neighboring_channels = np.zeros((total_units, num_channels_to_compare))
-            # find neighboring channels
-            neighboring_channels[idx] = find_neighboring_channels(pc_feature_ind[idx, pc_max],
+        # if channel_locations is not None:
+        #     if idx == 0:
+        #         neighboring_channels = np.zeros((total_units, num_channels_to_compare))
+
+        # find neighboring channels
+        neighboring_channels[idx] = find_neighboring_channels(pc_feature_ind[idx, pc_max],
                                                                   pc_feature_ind[idx, :],
                                                                   num_channels_to_compare,
                                                                   channel_locations)
@@ -346,27 +349,28 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
 
         peak_channel = peak_channels[idx]
 
-        half_spread_down = peak_channel \
-            if peak_channel < half_spread \
-            else half_spread
-
-        half_spread_up = np.max(pc_feature_ind) - peak_channel \
-            if peak_channel + half_spread > np.max(pc_feature_ind) \
-            else half_spread
+        # half_spread_down = peak_channel \
+        #     if peak_channel < half_spread \
+        #     else half_spread
+        #
+        # half_spread_up = np.max(pc_feature_ind) - peak_channel \
+        #     if peak_channel + half_spread > np.max(pc_feature_ind) \
+        #     else half_spread
 
         # units_for_channel: index (not ID) of units defined at the target unit's peak channel
         units_for_channel, channel_index = np.unravel_index(np.where(pc_feature_ind.flatten() == peak_channel)[0],
                                                             pc_feature_ind.shape)
 
-        if channel_locations is None:
-            units_in_range = (peak_channels[units_for_channel] >= peak_channel - half_spread_down) * \
-                             (peak_channels[units_for_channel] <= peak_channel + half_spread_up)
-            channels_to_use = np.arange(peak_channel - half_spread_down,
-                                        peak_channel + half_spread_up + 1)
-        else:
-            # units_in_range: list of bool, True for units whose peak channels are in the neighborhood of target unit
-            units_in_range = [channel in neighboring_channels[idx] for channel in peak_channels[units_for_channel]]
-            channels_to_use = neighboring_channels[idx]
+        # if channel_locations is None:
+        #     units_in_range = (peak_channels[units_for_channel] >= peak_channel - half_spread_down) * \
+        #                      (peak_channels[units_for_channel] <= peak_channel + half_spread_up)
+        #     channels_to_use = np.arange(peak_channel - half_spread_down,
+        #                                 peak_channel + half_spread_up + 1)
+        # else:
+
+        # units_in_range: list of bool, True for units whose peak channels are in the neighborhood of target unit
+        units_in_range = [channel in neighboring_channels[idx] for channel in peak_channels[units_for_channel]]
+        channels_to_use = neighboring_channels[idx]
 
         # only get index of units who are in the neighborhood of target unit
         units_for_channel = units_for_channel[units_in_range]
@@ -959,7 +963,7 @@ def find_neighboring_channels(peak_channel, channel_list, num_channels_to_compar
         IDs of channels being considered
     num_channels_to_compare: int
         Number of nearest channels to return
-    channel_locations: array-like, (n_channels, 2)
+    channel_locations: numpy.ndarray, (n_channels, 2)
         x,y coordinates of the channels in channel_list
 
     Returns
@@ -973,8 +977,6 @@ def find_neighboring_channels(peak_channel, channel_list, num_channels_to_compar
     # compute pairwise distance
     distances = [np.linalg.norm(peak_channel_location - loc) for loc in channel_locations]
     # get k closest channels (+1 because distance 0 is peak_channel)
-    neighboring_channels_inds = np.argsort(distances)[:num_channels_to_compare + 1]
+    neighboring_channels_inds = np.argsort(distances)[:num_channels_to_compare]
     neighboring_channels = channel_list[neighboring_channels_inds]
-    # remove peak channel
-    neighboring_channels = np.delete(neighboring_channels, np.where(neighboring_channels == peak_channel))
     return neighboring_channels

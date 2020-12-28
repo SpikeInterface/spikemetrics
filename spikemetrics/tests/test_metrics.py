@@ -105,20 +105,30 @@ def test_calculate_silhouette_score():
 
 
 def test_calculate_pc_metrics():
-    pc_features, spike_clusters = create_ground_truth_pc_distributions([1, -1, 10, 20], [1000, 1000, 500, 20])
-    pc_feature_ind = np.zeros((4, 1), dtype='int')
+
+    num_channels_to_compare = 6
     total_units = 4
-    pc_features = np.expand_dims(pc_features, axis=2)
+    center_locs = np.array([[1,-1,10,20],[10,20,30,10],[2,9,1,4],[4,-2,4,-1],[-1,2,4,3],[10,80,3,17]])
+    n_spikes = [1000, 1000, 500, 20]
+    pc_features, spike_clusters = create_ground_truth_pc_distributions(center_locs, n_spikes)
+    pc_feature_ind = np.tile(np.arange(0, num_channels_to_compare), (total_units,1))
+
+    max_spikes_for_cluster = 500
+    spikes_for_nn = 1000
+    n_neighbors = 3
+    channel_locations = np.zeros((num_channels_to_compare,2))
+    channel_locations[:,1] = np.arange(0,num_channels_to_compare)
 
     isolation_distances, l_ratios, d_primes, nn_hit_rates, nn_miss_rates = \
         calculate_pc_metrics(spike_clusters,
                              total_units,
                              pc_features,
                              pc_feature_ind,
-                             1,
-                             500,
-                             1000,
-                             3,
+                             num_channels_to_compare,
+                             max_spikes_for_cluster,
+                             spikes_for_nn,
+                             n_neighbors,
+                             channel_locations,
                              verbose=False)
 
     assert np.sum(np.isnan(isolation_distances)) == 0
