@@ -9,31 +9,39 @@ def create_ground_truth_pc_distributions(center_locations, total_points):
 
     Input:
     ------
-    separation : distance between distribution means
-    total_points : array indicating number of points in each distribution
+    center_locations: array-like, (units, ) or (channels, units)
+        mean of the multivariate gaussian at each channel for each unit
+    total_points: array-like
+        number of points in each distribution
 
     Output:
     -------
-    all_pcs : N x 3 matrix of simulated PCs
-        N = np.sum(total_points)
+    all_pcs : numpy.ndarray (num_spikes, num_pcs, num_channels)
     all_labels : array of cluster IDs
 
     """
 
     np.random.seed(0)
 
-    distributions = [multivariate_normal.rvs(mean=[center, 0.0, 0.0],
-                                             cov=[1.0, 1.0, 1.0],
-                                             size=size) 
-                    for center, size in zip(center_locations, total_points)]
+    if len(np.array(center_locations).shape)==1:
+        distributions = [multivariate_normal.rvs(mean=[center, 0.0, 0.0],
+                                                 cov=[1.0, 1.0, 1.0],
+                                                 size=size)
+                        for center, size in zip(center_locations, total_points)]
+        all_pcs = np.concatenate(distributions, axis=0)
 
-    all_labels = np.concatenate([np.ones((distributions[i].shape[0],),dtype='int')*i  for i in range(len(distributions))])
+    else:
+        all_pcs = np.empty((np.sum(total_points),3,center_locations.shape[0]))
+        for channel in range(center_locations.shape[0]):
+            distributions = [multivariate_normal.rvs(mean=[center, 0.0, 0.0],
+                                                         cov=[1.0, 1.0, 1.0],
+                                                         size=size)
+                        for center, size in zip(center_locations[channel], total_points)]
+            all_pcs[:,:,channel] = np.concatenate(distributions, axis=0)
 
-    all_pcs = np.concatenate(distributions, axis=0)
+    all_labels = np.concatenate([np.ones((total_points[i],),dtype='int')*i  for i in range(len(total_points))])
 
     return all_pcs, all_labels
-    
-
 
 def simulated_pcs_for_one_spike(total_channels, peak_channel):
     """ Simulate the top principal components across channels for one spike
@@ -111,9 +119,9 @@ def simulated_spike_train(duration, baseline_rate, num_violations, violation_del
     spike_train = np.cumsum(isis)
     viol_times = spike_train[:int(num_violations)] + violation_delta
     spike_train = np.sort(np.concatenate((spike_train, viol_times)))
-    
+
     return spike_train
-    
+
 
 def simulated_spike_amplitudes(num_spikes, mean_amplitude, amplitude_std):
     """ Create spike amplitudes for testing amplitude cutoff
@@ -135,6 +143,5 @@ def simulated_spike_amplitudes(num_spikes, mean_amplitude, amplitude_std):
     np.random.seed(1)
     r = norm.rvs(size=num_spikes, loc=mean_amplitude, scale=amplitude_std)
     spike_amplitudes = np.delete(r, np.where(r < 0)[0])
-    
+
     return spike_amplitudes
-    
