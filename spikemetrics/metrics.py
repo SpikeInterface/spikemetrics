@@ -305,14 +305,11 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
     nn_miss_rates
     """
 
-    # assert (num_channels_to_compare % 2 == 1)
-    # half_spread = int((num_channels_to_compare - 1) / 2)
-
     if metric_names is None:
         metric_names = ['isolation_distance', 'l_ratio', 'd_prime', 'nearest_neighbor']
 
-    if num_channels_to_compare>channel_locations.shape[0]:
-        num_channels_to_compare=channel_locations.shape[0]
+    if num_channels_to_compare > channel_locations.shape[0]:
+        num_channels_to_compare = channel_locations.shape[0]
 
     all_cluster_ids = np.unique(spike_clusters)
     if spike_cluster_subset is not None:
@@ -332,41 +329,22 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
         for_unit = np.squeeze(spike_clusters == cluster_id)
         pc_max = np.argmax(np.mean(pc_features[for_unit, 0, :], 0))
         peak_channels[idx] = pc_feature_ind[idx, pc_max]
-        # if channel_locations is not None:
-        #     if idx == 0:
-        #         neighboring_channels = np.zeros((total_units, num_channels_to_compare))
 
         # find neighboring channels
         neighboring_channels[idx] = find_neighboring_channels(pc_feature_ind[idx, pc_max],
-                                                                  pc_feature_ind[idx, :],
-                                                                  num_channels_to_compare,
-                                                                  channel_locations)
+                                                              pc_feature_ind[idx, :],
+                                                              num_channels_to_compare,
+                                                              channel_locations)
 
     for idx, cluster_id in enumerate(cluster_ids):
-
         if verbose:
             printProgressBar(idx + 1, total_units)
 
         peak_channel = peak_channels[idx]
 
-        # half_spread_down = peak_channel \
-        #     if peak_channel < half_spread \
-        #     else half_spread
-        #
-        # half_spread_up = np.max(pc_feature_ind) - peak_channel \
-        #     if peak_channel + half_spread > np.max(pc_feature_ind) \
-        #     else half_spread
-
         # units_for_channel: index (not ID) of units defined at the target unit's peak channel
         units_for_channel, channel_index = np.unravel_index(np.where(pc_feature_ind.flatten() == peak_channel)[0],
                                                             pc_feature_ind.shape)
-
-        # if channel_locations is None:
-        #     units_in_range = (peak_channels[units_for_channel] >= peak_channel - half_spread_down) * \
-        #                      (peak_channels[units_for_channel] <= peak_channel + half_spread_up)
-        #     channels_to_use = np.arange(peak_channel - half_spread_down,
-        #                                 peak_channel + half_spread_up + 1)
-        # else:
 
         # units_in_range: list of bool, True for units whose peak channels are in the neighborhood of target unit
         units_in_range = [channel in neighboring_channels[idx] for channel in peak_channels[units_for_channel]]
@@ -374,8 +352,6 @@ def calculate_pc_metrics(spike_clusters, total_units, pc_features, pc_feature_in
 
         # only get index of units who are in the neighborhood of target unit
         units_for_channel = units_for_channel[units_in_range]
-        # index of channels over which PCA is computed, for units in the neighborhood of target unit
-        channel_index = channel_index[units_in_range]
 
         spike_counts = np.zeros(units_for_channel.shape)
 
