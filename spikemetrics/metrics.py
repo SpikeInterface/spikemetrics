@@ -71,53 +71,62 @@ def calculate_metrics(spike_times, spike_clusters, amplitudes, pc_features, pc_f
         spikes_for_silhouette = min(spikes_in_epoch, params['n_silhouette'])
 
         print("Calculating isi violations")
-        isi_viol = calculate_isi_violations(spike_times[in_epoch], spike_clusters[in_epoch], total_units,
-                                            duration, params['isi_threshold'], params['min_isi'], verbose=verbose)
+        isi_viol = calculate_isi_violations(spike_times=spike_times[in_epoch],
+                                            spike_clusters=spike_clusters[in_epoch],
+                                            total_units=total_units,
+                                            isi_threshold=params['isi_threshold'],
+                                            min_isi=params['min_isi'],
+                                            duration=duration,
+                                            verbose=verbose)
 
         print("Calculating presence ratio")
-        presence_ratio = calculate_presence_ratio(spike_times[in_epoch], spike_clusters[in_epoch], total_units,
-                                                  duration, verbose=verbose)
+        presence_ratio = calculate_presence_ratio(spike_times=spike_times[in_epoch],
+                                                  spike_clusters=spike_clusters[in_epoch],
+                                                  total_units=total_units,
+                                                  duration=duration, verbose=verbose)
 
         print("Calculating firing rate")
-        firing_rate = calculate_firing_rates(spike_times[in_epoch], spike_clusters[in_epoch],
-                                             duration, total_units, verbose=verbose)
+        firing_rate = calculate_firing_rates(spike_times=spike_times[in_epoch],
+                                             spike_clusters=spike_clusters[in_epoch],
+                                             total_units=total_units, duration=duration, verbose=verbose)
 
         print("Calculating amplitude cutoff")
-        amplitude_cutoff = calculate_amplitude_cutoff(spike_clusters[in_epoch], amplitudes[in_epoch], total_units,
+        amplitude_cutoff = calculate_amplitude_cutoff(spike_clusters=spike_clusters[in_epoch],
+                                                      amplitudes=amplitudes[in_epoch],
+                                                      total_units=total_units,
                                                       verbose=verbose)
 
         print("Calculating PC-based metrics")
-        isolation_distance, l_ratio, d_prime, nn_hit_rate, nn_miss_rate = calculate_pc_metrics(spike_clusters[in_epoch],
-                                                                                               total_units,
-                                                                                               pc_features[in_epoch, :,
-                                                                                               :],
-                                                                                               pc_feature_ind,
-                                                                                               params[
-                                                                                                   'num_channels_to_compare'],
-                                                                                               params[
-                                                                                                   'max_spikes_for_unit'],
-                                                                                               spikes_for_nn,
-                                                                                               params['n_neighbors'],
-                                                                                               channel_locations=
-                                                                                               channel_locations,
-                                                                                               seed=seed,
-                                                                                               verbose=verbose)
+        isolation_distance, l_ratio, d_prime, nn_hit_rate, nn_miss_rate = \
+            calculate_pc_metrics(spike_clusters=spike_clusters[in_epoch],
+                                 total_units=total_units,
+                                 pc_features=pc_features[in_epoch, :, :],
+                                 pc_feature_ind=pc_feature_ind,
+                                 num_channels_to_compare=params['num_channels_to_compare'],
+                                 max_spikes_for_cluster=params['max_spikes_for_unit'],
+                                 spikes_for_nn=spikes_for_nn,
+                                 n_neighbors=params['n_neighbors'],
+                                 channel_locations=
+                                 channel_locations,
+                                 seed=seed,
+                                 verbose=verbose)
 
         print("Calculating silhouette score")
-        silhouette_score = calculate_silhouette_score(spike_clusters[in_epoch],
-                                                      total_units,
-                                                      pc_features[in_epoch, :, :],
-                                                      pc_feature_ind,
-                                                      spikes_for_silhouette,
+        silhouette_score = calculate_silhouette_score(spike_clusters=spike_clusters[in_epoch],
+                                                      total_units=total_units,
+                                                      pc_features=pc_features[in_epoch, :, :],
+                                                      pc_feature_ind=pc_feature_ind,
+                                                      spikes_for_silhouette=spikes_for_silhouette,
                                                       seed=seed, verbose=verbose)
 
         print("Calculating drift metrics")
-        max_drift, cumulative_drift = calculate_drift_metrics(spike_times[in_epoch],
-                                                              spike_clusters[in_epoch],
-                                                              total_units,
-                                                              pc_features[in_epoch, :, :],
-                                                              pc_feature_ind,
-                                                              params['drift_metrics_interval_s'],
+        max_drift, cumulative_drift = calculate_drift_metrics(spike_times=spike_times[in_epoch],
+                                                              spike_clusters=spike_clusters[in_epoch],
+                                                              total_units=total_units,
+                                                              pc_features=pc_features[in_epoch, :, :],
+                                                              pc_feature_ind=pc_feature_ind,
+                                                              interval_length=params['drift_metrics_interval_s'],
+                                                              min_spikes_per_interval=
                                                               params['drift_metrics_min_spikes_per_interval'],
                                                               channel_locations=
                                                               channel_locations,
